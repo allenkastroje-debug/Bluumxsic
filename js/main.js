@@ -368,7 +368,7 @@ async function exportar(compartir) {
   try {
     const { blob, nombre, n } = await B.crearRespaldo();
     quitar();
-    const file = new File([blob], nombre, { type: 'application/json' });
+    const file = new File([blob], nombre, { type: 'application/zip' });
     if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas.`, 'Exito'); return; }
       catch (err) { if (err.name === 'AbortError') return; }

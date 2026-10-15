@@ -331,7 +331,7 @@ function vMas() {
     <div class="acciones"><button class="btn" data-act="probar-toast">Probar mensaje</button><button class="btn fantasma" data-act="probar-dlg">Probar confirmación</button></div>`;
 
   const resp = `
-    <p class="nota">Un solo archivo .json con tus datos y todas las fotos de comprobantes. Es el mismo formato de la app de Windows: puedes pasar todo de un lado a otro.</p>
+    <p class="nota">Un archivo .zip con tus datos (datos.json) y las fotos de comprobantes en la carpeta «comprobantes». Es el mismo formato de la app de Windows: puedes pasar todo de un lado a otro. También se importan los respaldos antiguos .json.</p>
     <div class="acciones">
       ${navigator.canShare ? '<button class="btn" data-act="exp-compartir">📤 Guardar / compartir respaldo</button><button class="btn fantasma" data-act="exp-descargar">⬇ Descargar</button>'
         : '<button class="btn" data-act="exp-descargar">⬇ Descargar respaldo</button>'}

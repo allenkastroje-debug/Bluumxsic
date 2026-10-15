@@ -366,7 +366,7 @@ B.revisarPagos = async (manual = false) => {
   await B.notificar('Bluumxsic · pagos', texto);
 };
 
-/* ───────────── Respaldo (.json) ───────────── */
+/* ───────────── Respaldo (.zip) ───────────── */
 const aBase64 = blob => new Promise((ok, mal) => {
   const fr = new FileReader();
   fr.onload = () => ok(String(fr.result).split(',')[1] || '');
@@ -380,12 +380,12 @@ const deBase64 = (b64, tipo) => {
 };
 B.mimeDe = ruta => ({ '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp' }[(/\.[a-z0-9]+$/i.exec(ruta) || [''])[0].toLowerCase()] || 'image/jpeg');
 
-/* Mismo formato que el respaldo de la app de Windows: se pueden pasar datos y comprobantes en ambos sentidos. */
+/* Mismo formato que el respaldo de la app de Windows (v2.2): se pueden pasar datos y comprobantes en ambos sentidos. */
 B.crearRespaldo = async () => {
-  const claves = await B.db.keys('pruebas'), archivos = [];
+  const claves = await B.db.keys('pruebas'), entradas = [];
   for (const k of claves) {
     const blob = await B.db.get('pruebas', k);
-    if (blob) archivos.push({ Ruta: String(k), Base64: await aBase64(blob) });
+    if (blob) entradas.push({ nombre: 'comprobantes/' + String(k), datos: blob });
   }
   const d = B.d;
   const datos = {
@@ -393,10 +393,11 @@ B.crearRespaldo = async () => {
     Tasa: d.Tasa, TasaActualizada: d.TasaActualizada, AutoActualizar: d.AutoActualizar,
     AvisosActivos: d.AvisosActivos, AvisoHora: d.AvisoHora, DiasCerca: d.DiasCerca, UltimoAviso: d.UltimoAviso,
   };
-  const json = JSON.stringify({ Version: 1, App: 'Bluumxsic SP-Control', Fecha: B.ahoraIso(), Datos: datos, Archivos: archivos });
+  const json = JSON.stringify({ Version: 2, App: 'Bluumxsic SP-Control', Fecha: B.ahoraIso(), Datos: datos, Archivos: [] }, null, 1);
+  entradas.push({ nombre: 'datos.json', datos: json });
   const n = new Date();
-  const nombre = `Bluumxsic-respaldo-${n.getFullYear()}${B.pad(n.getMonth() + 1)}${B.pad(n.getDate())}-${B.pad(n.getHours())}${B.pad(n.getMinutes())}.json`;
-  return { blob: new Blob([json], { type: 'application/json' }), nombre, n: archivos.length };
+  const nombre = `Bluumxsic-respaldo-${n.getFullYear()}${B.pad(n.getMonth() + 1)}${B.pad(n.getDate())}-${B.pad(n.getHours())}${B.pad(n.getMinutes())}.zip`;
+  return { blob: await B.zip.crear(entradas), nombre, n: claves.length };
 };
 
 B.descargar = (blob, nombre) => {
@@ -414,16 +415,34 @@ B.leerArchivoTexto = async file => {
   throw new Error('No se pudo leer el archivo desde el teléfono (' + (ult?.name || 'error') + '). Cópialo a la carpeta Descargas y vuelve a elegirlo desde ahí.');
 };
 
+const validarRespaldo = r => {
+  if (!r || typeof r !== 'object' || !r.Datos || !(r.Version >= 1)) throw new Error('Este archivo no es un respaldo de Bluumxsic.');
+};
+
+/* Acepta el .zip nuevo (datos.json + comprobantes/) y el .json antiguo (fotos en Base64).
+   Devuelve { Version, Fecha, Datos, Archivos: [{ Ruta, obtener(): Promise<Blob> }] } */
 B.leerRespaldo = async file => {
+  if (!file.size) throw new Error('El archivo está vacío (0 KB). Vuelve a copiarlo; puede que la extracción quedara incompleta.');
+  const cab = await B.zip.bytes(file.slice(0, 4));
+  if (cab[0] === 0x50 && cab[1] === 0x4B) {
+    const lista = await B.zip.leer(file);
+    const ed = lista.find(x => x.nombre.toLowerCase() === 'datos.json');
+    if (!ed) throw new Error('El .zip no trae «datos.json»: no es un respaldo de Bluumxsic.');
+    let r;
+    try { r = JSON.parse((await (await ed.leer()).text()).replace(/^\uFEFF/, '')); } catch (e) { if (e.message && /contraseña|zip|navegador|compresión/.test(e.message)) throw e; throw new Error('«datos.json» está dañado o incompleto.'); }
+    validarRespaldo(r);
+    r.Archivos = lista.filter(x => /^comprobantes\//i.test(x.nombre))
+      .map(x => ({ Ruta: x.nombre.replace(/^comprobantes\//i, ''), obtener: x.leer }));
+    return r;
+  }
   let txt = await B.leerArchivoTexto(file);
   txt = txt.replace(/^\uFEFF/, '').trim();
-  if (!txt) throw new Error('El archivo está vacío (0 KB). Vuelve a copiarlo; puede que la extracción quedara incompleta.');
   let r;
   try { r = JSON.parse(txt); } catch (e) {
-    throw new Error('El archivo no es un JSON completo (' + Math.round(file.size / 1024) + ' KB leídos). Puede estar cortado o corrupto: ' + (e.message || e));
+    throw new Error('El archivo no es un respaldo completo (' + Math.round(file.size / 1024) + ' KB leídos). Puede estar cortado o dañado: ' + (e.message || e));
   }
-  if (!r || typeof r !== 'object' || !r.Datos || !(r.Version >= 1)) throw new Error('Este archivo no es un respaldo de Bluumxsic.');
-  r.Archivos = Array.isArray(r.Archivos) ? r.Archivos : [];
+  validarRespaldo(r);
+  r.Archivos = (Array.isArray(r.Archivos) ? r.Archivos : []).map(a => ({ Ruta: a.Ruta, obtener: async () => deBase64(a.Base64 || '', B.mimeDe(String(a.Ruta || ''))) }));
   return r;
 };
 
@@ -435,7 +454,11 @@ B.restaurar = async r => {
     const ruta = String(a.Ruta || '').replace(/\\/g, '/');
     const ext = (/\.[a-z0-9]+$/i.exec(ruta) || [''])[0].toLowerCase();
     if (!ruta || ruta.startsWith('/') || ruta.split('/').some(s => s === '..' || s === '') || !B.EXT_OK.includes(ext)) continue;
-    try { await B.db.set('pruebas', ruta, deBase64(a.Base64, B.mimeDe(ruta))); n++; } catch { /* imagen dañada: se omite */ }
+    try {
+      const blob = await a.obtener();
+      if (!blob || !blob.size) continue;
+      await B.db.set('pruebas', ruta, blob.type ? blob : new Blob([blob], { type: B.mimeDe(ruta) })); n++;
+    } catch { /* imagen dañada: se omite */ }
   }
   const nuevo = B.normalizar(r.Datos);
   // se conservan los ajustes propios de este teléfono (avisos, días de anticipación)
