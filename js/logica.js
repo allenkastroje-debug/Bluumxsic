@@ -406,9 +406,22 @@ B.descargar = (blob, nombre) => {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 };
 
+B.leerArchivoTexto = async file => {
+  const intentos = [() => file.text(), () => new Response(file).text(),
+    () => new Promise((ok, mal) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => mal(fr.error); fr.readAsText(file); })];
+  let ult;
+  for (const f of intentos) { try { return await f(); } catch (e) { ult = e; } }
+  throw new Error('No se pudo leer el archivo desde el teléfono (' + (ult?.name || 'error') + '). Cópialo a la carpeta Descargas y vuelve a elegirlo desde ahí.');
+};
+
 B.leerRespaldo = async file => {
+  let txt = await B.leerArchivoTexto(file);
+  txt = txt.replace(/^\uFEFF/, '').trim();
+  if (!txt) throw new Error('El archivo está vacío (0 KB). Vuelve a copiarlo; puede que la extracción quedara incompleta.');
   let r;
-  try { r = JSON.parse(await file.text()); } catch { throw new Error('El archivo no es un respaldo válido (no se pudo leer).'); }
+  try { r = JSON.parse(txt); } catch (e) {
+    throw new Error('El archivo no es un JSON completo (' + Math.round(file.size / 1024) + ' KB leídos). Puede estar cortado o corrupto: ' + (e.message || e));
+  }
   if (!r || typeof r !== 'object' || !r.Datos || !(r.Version >= 1)) throw new Error('Este archivo no es un respaldo de Bluumxsic.');
   r.Archivos = Array.isArray(r.Archivos) ? r.Archivos : [];
   return r;

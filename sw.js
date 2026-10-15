@@ -1,5 +1,5 @@
 /* Service worker: deja la app disponible sin internet y revisa los pagos cuando el sistema lo permite. */
-const VERSION = 'bluumxsic-v1';
+const VERSION = 'bluumxsic-v3';
 const ARCHIVOS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/util.js', 'js/db.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',

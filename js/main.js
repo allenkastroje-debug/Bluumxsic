@@ -398,7 +398,7 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', async ev => {
   const t = ev.target;
-  if (t.id === 'archivo-respaldo' && t.files[0]) { const f = t.files[0]; t.value = ''; importar(f); return; }
+  if (t.id === 'archivo-respaldo' && t.files[0]) { const f = t.files[0]; importar(f).finally(() => { try { t.value = ''; } catch { } }); return; }
   if (t.id === 'hex-acento' || t.id === 'hex-logo') {
     const v = t.value.trim();
     if (t.id === 'hex-logo' && !v) { B.aj.logoColor = ''; aplicarAj(); return; }
