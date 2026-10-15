@@ -53,3 +53,6 @@ para que los teléfonos descarguen la versión nueva.
 
 Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m http.server 8080`, luego entra a
 `http://localhost:8080` en Chrome. (En el teléfono solo funciona desde una dirección https.)
+
+## Versión 1.6
+- Clientes con varias cuentas: casilla «Cada cuenta con su propia fecha de pago». El monto es por cuenta, cada cuenta tiene su fecha y se paga una por una (✔ Pagó en cada cuenta). El color del cliente sigue la fecha más próxima. Compatible con la app de PC v2.3.

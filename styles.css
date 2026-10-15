@@ -168,6 +168,15 @@ button.fila { width:100%; text-align:left; color:inherit; }
 .det-in h3 { font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:14px 0 6px; font-weight:700; }
 .cuentas { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
 .cuentas li { display:flex; justify-content:space-between; gap:8px; padding:8px 12px; border-radius:10px; background:var(--surface2); }
+.cuentas li.cta { align-items:center; border-left:4px solid var(--st-c, var(--ok)); }
+.cuentas li.st-Debe { --st-c:var(--danger); } .cuentas li.st-Hoy { --st-c:var(--hoy); } .cuentas li.st-Cerca { --st-c:var(--warn); } .cuentas li.st-Pagado { --st-c:var(--ok); }
+.cta-info { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.cta-info small { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+.interruptor { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:12px; background:var(--surface2); cursor:pointer; }
+.interruptor[hidden] { display:none; }
+.interruptor input[type=checkbox] { width:20px; height:20px; margin-top:2px; accent-color:var(--accent); flex:none; }
+.interruptor small { color:var(--muted); }
+.cli-der b small { font-weight:500; color:var(--muted); font-size:.72rem; }
 
 /* ───── Planes ───── */
 .plan { display:flex; flex-direction:column; gap:8px; }
@@ -242,7 +251,7 @@ button.fila { width:100%; text-align:left; color:inherit; }
 .campo > span { font-size:.78rem; color:var(--muted); font-weight:600; }
 .campo.en-linea { flex-direction:row; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
 .campo.en-linea input { width:130px; }
-input:not([type=radio]):not([type=file]), textarea {
+input:not([type=radio]):not([type=file]):not([type=checkbox]), textarea {
   width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface2); color:var(--text);
   font-size:max(16px,1rem); outline:none; transition:border-color .2s, box-shadow .2s; min-width:0; }
 input:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-faint); }

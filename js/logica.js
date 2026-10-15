@@ -29,6 +29,14 @@ B.normalizar = (src = {}) => {
     c.Usuario = c.Usuarios[0] || '';
     c.ProximoPago ||= B.aIso(B.hoy());
     c.UltimoPago ||= null; c.Carpeta ||= '';
+    // fechas de pago por cuenta (si no, todas las cuentas comparten ProximoPago)
+    c.FechasPorCuenta = !!c.FechasPorCuenta && c.Cuentas > 1;
+    if (!Array.isArray(c.ProximosPagos)) c.ProximosPagos = [];
+    if (!Array.isArray(c.UltimosPagos)) c.UltimosPagos = [];
+    while (c.ProximosPagos.length < c.Cuentas) c.ProximosPagos.push(c.ProximoPago);
+    while (c.UltimosPagos.length < c.Cuentas) c.UltimosPagos.push(c.UltimoPago);
+    c.ProximosPagos.length = c.Cuentas; c.UltimosPagos.length = c.Cuentas;
+    B.sincronizar(c);
   }
   for (const p of d.Planes) {
     p.Id ||= B.uuid();
@@ -68,6 +76,30 @@ B.ESTADO_COLOR = { Debe: 'var(--danger)', Hoy: 'var(--hoy)', Cerca: 'var(--warn)
 B.cDias = c => B.dias(c.ProximoPago);
 B.cEstado = c => B.estadoDe(B.cDias(c));
 B.cEstadoTexto = c => ({ Debe: '✖ Debe', Hoy: '● Vence hoy', Cerca: '◔ Por vencer' }[B.cEstado(c)] || (c.UltimoPago ? '✔ Pagado' : '✔ Al día'));
+/* Con «fechas por cuenta», ProximoPago/UltimoPago guardan la más próxima / la última de todas. */
+B.porCuenta = c => !!c.FechasPorCuenta && c.Cuentas > 1;
+B.sincronizar = c => {
+  if (!B.porCuenta(c)) return;
+  const f = c.ProximosPagos.slice(0, c.Cuentas).filter(Boolean).sort();
+  if (f.length) c.ProximoPago = f[0];
+  const u = c.UltimosPagos.slice(0, c.Cuentas).filter(Boolean).sort();
+  c.UltimoPago = u.length ? u[u.length - 1] : null;
+};
+B.cFecha = (c, i) => (B.porCuenta(c) && c.ProximosPagos[i]) || c.ProximoPago;
+B.cDiasC = (c, i) => B.dias(B.cFecha(c, i));
+B.cEstadoC = (c, i) => B.estadoDe(B.cDiasC(c, i));
+B.estadoTextoDe = (est, pagado) => ({ Debe: '✖ Debe', Hoy: '● Vence hoy', Cerca: '◔ Por vencer' }[est] || (pagado ? '✔ Pagado' : '✔ Al día'));
+B.cobraEl = (c, d) => B.porCuenta(c) ? c.ProximosPagos.slice(0, c.Cuentas).some(f => B.mismoDia(B.deIso(f), d)) : B.mismoDia(B.deIso(c.ProximoPago), d);
+B.iUrgente = c => { let m = 0; for (let i = 1; i < c.Cuentas; i++) if (B.cFecha(c, i) < B.cFecha(c, m)) m = i; return m; };
+/* Pagos que vencen en los próximos N días (una entrada por cuenta cuando tienen fechas distintas). */
+B.cobrosProximos = max => {
+  const r = [];
+  for (const c of B.d.Clientes) {
+    if (B.porCuenta(c)) { for (let i = 0; i < c.Cuentas; i++) if (B.cDiasC(c, i) <= max) r.push({ c, i, fecha: B.cFecha(c, i) }); }
+    else if (B.cDias(c) <= max) r.push({ c, i: null, fecha: c.ProximoPago });
+  }
+  return r.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.c.Nombre.localeCompare(b.c.Nombre));
+};
 B.pEstadoTexto = p => ({ Debe: '✖ Plan vencido', Hoy: '● Se paga hoy', Cerca: '◔ Por pagar' }[B.estadoDe(B.dias(p.ProximoPago))] || '✔ Plan pagado');
 
 B.nombreCuenta = (c, i) => (c.Usuarios[i] && c.Usuarios[i].trim()) ? '@' + c.Usuarios[i].trim().replace(/^@+/, '') : `Cuenta ${i + 1} (sin usuario)`;
@@ -157,7 +189,7 @@ B.guardarPrueba = async (file, carpeta, titular, periodo, clienteId, planId) => 
 B.nombreArchivo = ruta => String(ruta || '').split('/').pop();
 
 /* ───────────── Clientes ───────────── */
-B.validarCliente = (f, usuarios) => {
+B.validarCliente = (f, usuarios, fechas = []) => {
   if (!f.Nombre.trim()) return 'Escribe el nombre del cliente.';
   const cuentas = parseInt(String(f.Cuentas).trim(), 10);
   if (!(cuentas >= 1 && cuentas <= 20)) return 'Escribe cuántas cuentas alquila (de 1 a 20).';
@@ -166,27 +198,34 @@ B.validarCliente = (f, usuarios) => {
   const m = B.tryNum(f.Monto);
   if (!(m > 0)) return 'Escribe el monto que paga (mayor que cero).';
   if (!B.deIso(f.ProximoPago)) return 'Elige la próxima fecha de pago.';
+  if (f.FechasPorCuenta && cuentas > 1)
+    for (let i = 0; i < cuentas; i++) if (!B.deIso(fechas[i])) return `Elige la fecha de pago de la cuenta ${i + 1}.`;
   return null;
 };
 
-B.guardarCliente = async (f, usuarios, editId) => {
+B.guardarCliente = async (f, usuarios, editId, fechas = []) => {
   const cuentas = parseInt(String(f.Cuentas).trim(), 10);
+  const porCuenta = !!f.FechasPorCuenta && cuentas > 1;
+  const base = B.aIso(B.deIso(f.ProximoPago));
+  const proximos = Array.from({ length: cuentas }, (_, i) => porCuenta ? B.aIso(B.deIso(fechas[i])) : base);
   const datos = {
+    FechasPorCuenta: porCuenta, ProximosPagos: proximos,
     Nombre: f.Nombre.trim(), Telefono: f.Telefono.trim(), Notas: f.Notas.trim(),
     Cuentas: cuentas, Usuarios: usuarios.slice(0, cuentas).map(u => u.trim().replace(/^@+/, '')),
     Monto: B.tryNum(f.Monto), Moneda: f.Moneda === 'VES' ? 'VES' : 'USD',
-    ProximoPago: B.aIso(B.deIso(f.ProximoPago)),
+    ProximoPago: [...proximos].sort()[0],
   };
   datos.Usuario = datos.Usuarios[0] || '';
   if (editId) {
     const c = B.cliente(editId);
-    Object.assign(c, datos);
+    const ult = Array.from({ length: cuentas }, (_, i) => (c.UltimosPagos && c.UltimosPagos[i]) || (i >= (c.UltimosPagos || []).length ? c.UltimoPago : null) || null);
+    Object.assign(c, datos, { UltimosPagos: ult });
     // si ahora alquila menos cuentas, se sueltan las que sobran en los planes
     for (const p of B.d.Planes) p.Asignaciones = p.Asignaciones.filter(a => a.ClienteId !== c.Id || a.Indice < c.Cuentas);
   } else {
-    B.d.Clientes.push(Object.assign({ Id: B.uuid(), UltimoPago: null, Carpeta: '' }, datos));
+    B.d.Clientes.push(Object.assign({ Id: B.uuid(), UltimoPago: null, Carpeta: '', UltimosPagos: Array(cuentas).fill(null) }, datos));
   }
-  B.d.Clientes.forEach(c => { while (c.Usuarios.length < c.Cuentas) c.Usuarios.push(''); });
+  B.d.Clientes.forEach(c => { while (c.Usuarios.length < c.Cuentas) c.Usuarios.push(''); B.sincronizar(c); });
   await B.guardar();
 };
 
@@ -196,18 +235,26 @@ B.eliminarCliente = async c => {
   await B.guardar();
 };
 
-B.registrarPagoCliente = async (c, file) => {
-  const periodo = B.deIso(c.ProximoPago), nuevo = B.addMeses(periodo, 1);
+B.registrarPagoCliente = async (c, file, i = null) => {
+  const porCuenta = B.porCuenta(c) && i !== null && i >= 0 && i < c.Cuentas;
+  const periodo = B.deIso(porCuenta ? B.cFecha(c, i) : c.ProximoPago), nuevo = B.addMeses(periodo, 1);
   if (!c.Carpeta) c.Carpeta = await B.crearCarpeta(c.Nombre, (c.Usuarios[0] || '').trim());
   const reg = await B.guardarPrueba(file, c.Carpeta, c.Nombre, periodo, c.Id, null);
   const us = B.usuariosTexto(c);
   B.d.Movimientos.push({
     Id: B.uuid(), Fecha: B.aIso(B.hoy()), Tipo: 'Ingreso',
-    Descripcion: `Pago ${c.Nombre}${us ? ` (${us})` : ''} · ${B.cuentasTexto(c)}`,
-    Monto: c.Monto, Moneda: c.Moneda, Tasa: B.d.Tasa, ClienteId: c.Id, Prueba: reg.Archivo,
+    Descripcion: porCuenta ? `Pago ${c.Nombre} (${B.nombreCuenta(c, i)}) · cuenta ${i + 1} de ${c.Cuentas}`
+      : `Pago ${c.Nombre}${us ? ` (${us})` : ''} · ${B.cuentasTexto(c)}`,
+    Monto: c.Monto, Moneda: c.Moneda, Tasa: B.d.Tasa, ClienteId: c.Id, CuentaIndice: porCuenta ? i : null, Prueba: reg.Archivo,
   });
-  c.UltimoPago = B.aIso(B.hoy());
-  c.ProximoPago = B.aIso(nuevo);
+  if (porCuenta) {
+    c.ProximosPagos[i] = B.aIso(nuevo); c.UltimosPagos[i] = B.aIso(B.hoy());
+    B.sincronizar(c);
+  } else {
+    c.UltimoPago = B.aIso(B.hoy());
+    c.ProximoPago = B.aIso(nuevo);
+    c.ProximosPagos = Array(c.Cuentas).fill(c.ProximoPago);
+  }
   await B.guardar();
   return reg;
 };
@@ -271,10 +318,18 @@ B.eliminarMovimiento = async m => {
     `¿Eliminar este movimiento?\n\n${B.fechaCorta(m.Fecha)} · ${m.Descripcion} · ${B.montoMov(m)}`, { si: 'Eliminar', peligro: true })) return false;
   B.d.Movimientos = B.d.Movimientos.filter(x => x.Id !== m.Id);
   const c = m.ClienteId ? B.cliente(m.ClienteId) : null;
-  if (c && await B.confirmar('Revertir pago',
+  const ci = Number.isInteger(m.CuentaIndice) ? m.CuentaIndice : null;
+  if (c && B.porCuenta(c) && ci !== null && ci < c.Cuentas) {
+    const antes = B.aIso(B.addMeses(B.deIso(B.cFecha(c, ci)), -1));
+    if (await B.confirmar('Revertir pago',
+      `Este movimiento era un pago de ${c.Nombre} (${B.nombreCuenta(c, ci)}).\n¿Devolver la fecha de esa cuenta al ${B.fechaCorta(antes)}?`, { si: 'Sí, devolver', no: 'No' })) {
+      c.ProximosPagos[ci] = antes; c.UltimosPagos[ci] = null; B.sincronizar(c);
+    }
+  } else if (c && await B.confirmar('Revertir pago',
     `Este movimiento era un pago de ${c.Nombre}.\n¿Devolver su próximo pago al ${B.fechaCorta(B.aIso(B.addMeses(B.deIso(c.ProximoPago), -1)))}?`, { si: 'Sí, devolver', no: 'No' })) {
     c.ProximoPago = B.aIso(B.addMeses(B.deIso(c.ProximoPago), -1));
     c.UltimoPago = null;
+    c.ProximosPagos = Array(c.Cuentas).fill(c.ProximoPago);
   }
   await B.guardar();
   return true;
@@ -289,14 +344,14 @@ B.resumenMes = fecha => {
   const suma = (t, f) => ms.filter(m => m.Tipo === t).reduce((s, m) => s + f(m), 0);
   const iU = suma('Ingreso', B.mUsd), iV = suma('Ingreso', B.mVes), gU = suma('Gasto', B.mUsd), gV = suma('Gasto', B.mVes);
   const fin = new Date(a, mes + 1, 0), esActual = a === B.hoy().getFullYear() && mes === B.hoy().getMonth();
-  const porCobrar = B.d.Clientes.filter(c => {
-    const d = B.deIso(c.ProximoPago);
-    return d && (esActual ? d <= fin : (d.getFullYear() === a && d.getMonth() === mes));
-  });
+  const vence = f => { const d = B.deIso(f); return !!d && (esActual ? d <= fin : (d.getFullYear() === a && d.getMonth() === mes)); };
+  // (cliente, cuántas cuentas por cobrar): una sola cuenta por cliente, o cada cuenta con su fecha
+  const porCobrar = B.d.Clientes.map(c => ({ c, n: B.porCuenta(c) ? c.ProximosPagos.slice(0, c.Cuentas).filter(vence).length : (vence(c.ProximoPago) ? 1 : 0) }))
+    .filter(x => x.n > 0);
   return {
     iU, iV, gU, gV, bU: iU - gU, bV: iV - gV, n: ms.length,
-    cU: porCobrar.reduce((s, c) => s + B.aUsd(c.Monto, c.Moneda), 0),
-    cV: porCobrar.reduce((s, c) => s + B.aVes(c.Monto, c.Moneda), 0),
+    cU: porCobrar.reduce((s, x) => s + B.aUsd(x.c.Monto * x.n, x.c.Moneda), 0),
+    cV: porCobrar.reduce((s, x) => s + B.aVes(x.c.Monto * x.n, x.c.Moneda), 0),
   };
 };
 
@@ -325,7 +380,10 @@ B.mensajeTasa = () => !(B.d.Tasa > 0) ? 'Sin tasa: toca para definirla'
 B.pendientes = () => {
   const r = { hoy: [], debe: [], cerca: [] };
   const poner = (e, t) => (e === 'Hoy' ? r.hoy : e === 'Debe' ? r.debe : e === 'Cerca' ? r.cerca : null)?.push(t);
-  for (const c of B.d.Clientes) poner(B.cEstado(c), c.Nombre);
+  for (const c of B.d.Clientes) {
+    if (B.porCuenta(c)) for (let i = 0; i < c.Cuentas; i++) poner(B.cEstadoC(c, i), `${c.Nombre} (${B.nombreCuenta(c, i)})`);
+    else poner(B.cEstado(c), c.Nombre);
+  }
   for (const p of B.d.Planes) poner(B.estadoDe(B.dias(p.ProximoPago)), 'Plan de ' + p.Admin);
   return r;
 };
@@ -487,8 +545,10 @@ B.whatsapp = c => {
   t = t.replace(/^\+/, '');
   if (t.startsWith('00')) t = t.slice(2);
   else if (t.startsWith('0')) t = '58' + t.slice(1);
-  const dias = B.cDias(c);
-  const cuando = dias < 0 ? `venció hace ${-dias} día(s)` : dias === 0 ? 'vence hoy' : `vence el ${B.fechaCorta(c.ProximoPago)}`;
-  const msg = `Hola ${c.Nombre}, te escribo para recordarte que tu pago de Spotify (${B.dinero(c.Monto, c.Moneda)}) ${cuando}. ¡Gracias!`;
+  const iu = B.porCuenta(c) ? B.iUrgente(c) : null;
+  const dias = iu === null ? B.cDias(c) : B.cDiasC(c, iu);
+  const cuando = dias < 0 ? `venció hace ${-dias} día(s)` : dias === 0 ? 'vence hoy' : `vence el ${B.fechaCorta(iu === null ? c.ProximoPago : B.cFecha(c, iu))}`;
+  const de = iu === null ? 'tu pago de Spotify' : `el pago de tu cuenta ${B.nombreCuenta(c, iu)} de Spotify`;
+  const msg = `Hola ${c.Nombre}, te escribo para recordarte que ${de} (${B.dinero(c.Monto, c.Moneda)}) ${cuando}. ¡Gracias!`;
   return `https://wa.me/${t}?text=${encodeURIComponent(msg)}`;
 };

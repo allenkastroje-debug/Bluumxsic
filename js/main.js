@@ -43,9 +43,10 @@ B.hojaCliente = (c = null) => {
       ${campo('Nombre del cliente', `<input name="Nombre" value="${e(c?.Nombre || '')}" autocapitalize="words">`)}
       ${campo('Teléfono (opcional)', `<input name="Telefono" type="tel" inputmode="tel" value="${e(c?.Telefono || '')}" placeholder="0412 1234567">`)}
       ${campo('¿Cuántas cuentas alquila?', `<input name="Cuentas" type="number" inputmode="numeric" min="1" max="20" value="${c?.Cuentas || 1}">`)}
+      <label class="interruptor" id="fpc-caja" hidden><input type="checkbox" name="FechasPorCuenta" ${c && B.porCuenta(c) ? 'checked' : ''}><span>Cada cuenta con su propia fecha de pago <small>(el monto es por cuenta)</small></span></label>
       <div id="usuarios"></div>
       <div class="dos">
-        ${campo('Monto que paga', `<input name="Monto" inputmode="decimal" value="${c ? B.num(c.Monto).replace(/^(.*),00$/, '$1') : ''}" placeholder="5,00">`)}
+        ${campo('<em id="monto-et" style="font-style:normal">Monto que paga</em>', `<input name="Monto" inputmode="decimal" value="${c ? B.num(c.Monto).replace(/^(.*),00$/, '$1') : ''}" placeholder="5,00">`)}
         <div class="campo"><span>Moneda</span>${seg('Moneda', [['USD', 'US$'], ['VES', 'Bs']], c?.Moneda || 'USD')}</div>
       </div>
       ${campo('Próxima fecha de pago', `<input name="ProximoPago" type="date" value="${c ? B.aInput(B.deIso(c.ProximoPago)) : hoyIso}">`)}
@@ -54,23 +55,36 @@ B.hojaCliente = (c = null) => {
     </form>`, { alta: true });
   const form = h.$('#f-cli'), cont = h.$('#usuarios');
   const usuarios = (c ? [...c.Usuarios] : ['']);
+  const fechas = c ? Array.from({ length: c.Cuentas }, (_, i) => B.aInput(B.deIso(B.cFecha(c, i)))) : [];
+  const caja = h.$('#fpc-caja');
+  const leerFilas = () => {
+    cont.querySelectorAll('input[data-u]').forEach(i => { usuarios[+i.dataset.u] = i.value; });
+    cont.querySelectorAll('input[data-f]').forEach(i => { fechas[+i.dataset.f] = i.value; });
+  };
   const pintarUsuarios = () => {
-    cont.querySelectorAll('input').forEach((i, n) => { usuarios[n] = i.value; });
+    leerFilas();
     const n = Math.min(20, Math.max(1, parseInt(form.Cuentas.value, 10) || 1));
     while (usuarios.length < n) usuarios.push('');
+    const base = form.ProximoPago.value || hoyIso;
+    for (let i = 0; i < n; i++) if (!fechas[i]) fechas[i] = base;
+    caja.hidden = n < 2;
+    const por = n > 1 && form.FechasPorCuenta.checked;
+    h.$('#monto-et').textContent = por ? 'Monto por cada cuenta' : 'Monto que paga';
     cont.innerHTML = Array.from({ length: n }, (_, i) =>
       campo(n === 1 ? 'Usuario de la cuenta' : `Usuario de la cuenta ${i + 1}`,
-        `<input data-u="${i}" value="${e(usuarios[i] || '')}" placeholder="usuario_spotify" autocapitalize="none" spellcheck="false">`)).join('');
+        `<input data-u="${i}" value="${e(usuarios[i] || '')}" placeholder="usuario_spotify" autocapitalize="none" spellcheck="false">`) +
+      (por ? campo(`Fecha de pago de la cuenta ${i + 1}`, `<input data-f="${i}" type="date" value="${e(fechas[i])}">`) : '')).join('');
   };
   form.Cuentas.addEventListener('input', pintarUsuarios);
+  form.FechasPorCuenta.addEventListener('change', pintarUsuarios);
   pintarUsuarios();
   form.addEventListener('submit', async ev => {
     ev.preventDefault();
-    cont.querySelectorAll('input').forEach((i, n) => { usuarios[n] = i.value; });
+    leerFilas();
     const f = B.leer(form);
-    const err = B.validarCliente(f, usuarios);
+    const err = B.validarCliente(f, usuarios, fechas);
     if (err) { B.aviso(err); return; }
-    await B.guardarCliente(f, usuarios, c?.Id);
+    await B.guardarCliente(f, usuarios, c?.Id, fechas);
     h.cerrar(); B.render();
     B.toast(edit ? 'Cliente actualizado' : 'Cliente agregado', f.Nombre.trim(), 'Exito');
   });
@@ -164,12 +178,18 @@ B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito }) => {
   };
 };
 
-B.pagarCliente = c => {
-  const periodo = B.deIso(c.ProximoPago), nuevo = B.addMeses(periodo, 1);
+/* i = cuenta concreta (cuando el cliente tiene fechas distintas por cuenta); sin i se paga la que vence primero. */
+B.pagarCliente = (c, i = null) => {
+  const porCuenta = B.porCuenta(c);
+  if (porCuenta && (i === null || isNaN(i))) i = B.iUrgente(c);
+  const periodo = B.deIso(porCuenta ? B.cFecha(c, i) : c.ProximoPago), nuevo = B.addMeses(periodo, 1);
   B.hojaPago({
     titulo: 'Registrar pago',
-    intro: `¿Registrar el pago de <b>${e(c.Nombre)}</b> por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>?<br>Su próximo pago pasará al ${e(B.fechaCorta(B.aIso(nuevo)))}.`,
-    periodo, ejecutar: f => B.registrarPagoCliente(c, f), exito: { titulo: 'Pago registrado', texto: c.Nombre },
+    intro: porCuenta
+      ? `¿Registrar el pago de <b>${e(c.Nombre)}</b> · ${e(B.nombreCuenta(c, i))} por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>?<br>La fecha de esa cuenta pasará del ${e(B.fechaCorta(B.aIso(periodo)))} al ${e(B.fechaCorta(B.aIso(nuevo)))}.`
+      : `¿Registrar el pago de <b>${e(c.Nombre)}</b> por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>?<br>Su próximo pago pasará al ${e(B.fechaCorta(B.aIso(nuevo)))}.`,
+    periodo, ejecutar: f => B.registrarPagoCliente(c, f, porCuenta ? i : null),
+    exito: { titulo: 'Pago registrado', texto: porCuenta ? `${c.Nombre} · ${B.nombreCuenta(c, i)}` : c.Nombre },
   });
 };
 
@@ -271,7 +291,7 @@ const ACC = {
     if (!await B.confirmar('Eliminar cliente', `¿Eliminar a ${c.Nombre}?\nSus pagos ya registrados se conservan en Movimientos.`, { si: 'Eliminar', peligro: true })) return;
     await B.eliminarCliente(c); B.render(); B.toast('Cliente eliminado', c.Nombre, 'Info');
   },
-  'pagar-cli': el => B.pagarCliente(B.cliente(el.dataset.id)),
+  'pagar-cli': el => B.pagarCliente(B.cliente(el.dataset.id), el.dataset.i === undefined ? null : +el.dataset.i),
 
   'nuevo-plan': () => B.hojaPlan(),
   'edit-plan': el => B.hojaPlan(B.d.Planes.find(p => p.Id === el.dataset.id)),

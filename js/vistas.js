@@ -68,9 +68,9 @@ const vacio = (ic, t, s) => `<div class="vacio"><span>${ic}</span><b>${e(t)}</b>
 function vResumen() {
   const r = B.resumenMes(B.ui.mes), p = B.pendientes();
   const hay = p.debe.length + p.hoy.length + p.cerca.length > 0;
-  const prox = B.d.Clientes.filter(c => B.cDias(c) <= 7).sort((a, b) => a.ProximoPago.localeCompare(b.ProximoPago)).slice(0, 8);
+  const prox = B.cobrosProximos(7).slice(0, 8);
   const planes = B.d.Planes.filter(x => B.dias(x.ProximoPago) <= 7).sort((a, b) => a.ProximoPago.localeCompare(b.ProximoPago));
-  const porCobrar = B.d.Clientes.filter(c => B.cDias(c) <= 0).length;
+  const porCobrar = B.d.Clientes.filter(c => B.cDias(c) <= 0).length;   // clientes con algún pago vencido o de hoy
   return `<section class="pagina">
     <div class="mes-nav">
       <button class="icono" data-act="mes-ant" aria-label="Mes anterior">‹</button>
@@ -92,12 +92,14 @@ function vResumen() {
       <span class="chip" style="--st:var(--accent)">${r.n} movimiento(s)</span>
     </div>
     <h2 class="sec-t">Próximos cobros</h2>
-    ${prox.length ? prox.map(c => `
-      <div class="card fila st-${B.cEstado(c)}">
-        <div class="fila-info"><b>${e(c.Nombre)}</b><small>${e(B.dinero(c.Monto, c.Moneda))} · ${e(B.diasTexto(B.cDias(c)))}</small></div>
-        ${chipEstado(B.cEstado(c), B.cEstadoTexto(c))}
-        <button class="btn mini" data-act="pagar-cli" data-id="${c.Id}">✔ Pagó</button>
-      </div>`).join('') : vacio('🎉', 'Nada por cobrar esta semana', 'Cuando alguien venza en los próximos 7 días aparecerá aquí.')}
+    ${prox.length ? prox.map(({ c, i }) => {
+      const est = i === null ? B.cEstado(c) : B.cEstadoC(c, i), dias = i === null ? B.cDias(c) : B.cDiasC(c, i);
+      return `
+      <div class="card fila st-${est}">
+        <div class="fila-info"><b>${e(c.Nombre)}${i === null ? '' : ' · ' + e(B.nombreCuenta(c, i))}</b><small>${e(B.dinero(c.Monto, c.Moneda))} · ${e(B.diasTexto(dias))}</small></div>
+        ${chipEstado(est, i === null ? B.cEstadoTexto(c) : B.estadoTextoDe(est, !!c.UltimosPagos[i]))}
+        <button class="btn mini" data-act="pagar-cli" data-id="${c.Id}"${i === null ? '' : ` data-i="${i}"`}>✔ Pagó</button>
+      </div>`; }).join('') : vacio('🎉', 'Nada por cobrar esta semana', 'Cuando alguien venza en los próximos 7 días aparecerá aquí.')}
     ${planes.length ? `<h2 class="sec-t">Planes por pagar</h2>` + planes.map(x => `
       <div class="card fila st-${B.estadoDe(B.dias(x.ProximoPago))}">
         <div class="fila-info"><b>${e(x.Admin)}</b><small>${e(B.dinero(x.Monto, x.Moneda))} · ${e(B.diasTexto(B.dias(x.ProximoPago)))}</small></div>
@@ -128,27 +130,33 @@ function vClientes() {
 
 function tarjetaCliente(c) {
   const est = B.cEstado(c), ab = B.ui.abiertos.has(c.Id), dias = B.cDias(c);
+  const por = B.porCuenta(c);
   const cuentas = Array.from({ length: c.Cuentas }, (_, i) => {
     const p = B.planDeCuenta(c, i);
-    return `<li><span>${e(B.nombreCuenta(c, i))}</span><small>${p ? '🏠 ' + e(p.Admin) : 'Sin plan'}</small></li>`;
+    if (!por) return `<li><span>${e(B.nombreCuenta(c, i))}</span><small>${p ? '🏠 ' + e(p.Admin) : 'Sin plan'}</small></li>`;
+    const ce = B.cEstadoC(c, i);
+    return `<li class="cta st-${ce}">
+      <div class="cta-info"><span>${e(B.nombreCuenta(c, i))}</span>
+        <small>${chipEstado(ce, B.estadoTextoDe(ce, !!c.UltimosPagos[i]))} ${e(B.fechaCorta(B.cFecha(c, i)))} · ${e(B.diasTexto(B.cDiasC(c, i)))}${p ? ' · 🏠 ' + e(p.Admin) : ''}</small></div>
+      <button class="btn mini" data-act="pagar-cli" data-id="${c.Id}" data-i="${i}">✔ Pagó</button></li>`;
   }).join('');
   const wa = B.whatsapp(c);
   return `<article class="card cli st-${est} ${ab ? 'abierto' : ''}" data-id="${c.Id}">
     <button class="cli-cab" data-act="abrir-cli" data-id="${c.Id}" aria-expanded="${ab}">
       <div class="cli-info"><b>${e(c.Nombre)}</b><small>${e(B.cSub(c)) || '—'}</small></div>
-      <div class="cli-der"><b>${e(B.dinero(c.Monto, c.Moneda))}</b>${chipEstado(est, B.cEstadoTexto(c))}</div>
+      <div class="cli-der"><b>${e(B.dinero(c.Monto, c.Moneda))}${por ? ' <small>c/u</small>' : ''}</b>${chipEstado(est, B.cEstadoTexto(c))}</div>
     </button>
-    <div class="cli-pie"><span>Próximo pago: ${e(B.fechaCorta(c.ProximoPago))}</span><span>${e(B.diasTexto(dias))}</span></div>
+    <div class="cli-pie"><span>${por ? 'Próximo (más cercano)' : 'Próximo pago'}: ${e(B.fechaCorta(c.ProximoPago))}</span><span>${e(B.diasTexto(dias))}</span></div>
     <div class="detalle"><div class="det-in">
       <dl class="datos">
         <div><dt>Último pago</dt><dd>${e(B.fechaCorta(c.UltimoPago))}</dd></div>
         <div><dt>Teléfono</dt><dd>${e(c.Telefono || '—')}</dd></div>
         ${c.Notas ? `<div class="ancho"><dt>Notas</dt><dd>${e(c.Notas)}</dd></div>` : ''}
       </dl>
-      <h3>Cuentas que alquila</h3>
+      <h3>${por ? 'Cuentas y fechas de pago' : 'Cuentas que alquila'}</h3>
       <ul class="cuentas">${cuentas}</ul>
       <div class="acciones">
-        <button class="btn" data-act="pagar-cli" data-id="${c.Id}">✔ Pagó</button>
+        ${por ? '' : `<button class="btn" data-act="pagar-cli" data-id="${c.Id}">✔ Pagó</button>`}
         ${wa ? `<a class="btn fantasma" href="${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
         ${c.Telefono ? `<a class="btn fantasma" href="tel:${e(c.Telefono.replace(/[^\d+]/g, ''))}">📞 Llamar</a>` : ''}
         <button class="btn fantasma" data-act="comprobantes" data-t="${e(c.Carpeta || '')}" data-n="${e(c.Nombre)}">🧾 Comprobantes</button>
@@ -202,7 +210,7 @@ B.calendario = () => {
   const marcas = {};
   const marca = (iso, k) => { const d = B.deIso(iso); if (d && d.getFullYear() === y && Math.abs(d.getMonth() - mes) <= 1) (marcas[B.aInput(d)] ||= {})[k] = 1; };
   B.d.Movimientos.forEach(x => marca(x.Fecha, x.Tipo === 'Ingreso' ? 'i' : 'g'));
-  B.d.Clientes.forEach(c => marca(c.ProximoPago, 'v'));
+  B.d.Clientes.forEach(c => (B.porCuenta(c) ? c.ProximosPagos.slice(0, c.Cuentas) : [c.ProximoPago]).forEach(f => marca(f, 'v')));
   B.d.Planes.forEach(p => marca(p.ProximoPago, 'v'));
   const primer = new Date(y, mes, 1), desfase = (primer.getDay() + 6) % 7, inicio = new Date(y, mes, 1 - desfase);
   let celdas = '';
@@ -231,7 +239,12 @@ function vMovs() {
   }).sort((a, b) => b.Fecha.localeCompare(a.Fecha));
   const ing = lista.filter(m => m.Tipo === 'Ingreso').reduce((s, m) => s + B.mUsd(m), 0);
   const gas = lista.filter(m => m.Tipo === 'Gasto').reduce((s, m) => s + B.mUsd(m), 0);
-  const cobros = dia ? [...B.d.Clientes.filter(c => B.mismoDia(B.deIso(c.ProximoPago), u.movDia)).map(c => ({ n: c.Nombre, c, est: B.cEstado(c) })),
+  const cobrosCli = [];
+  if (dia) for (const c of B.d.Clientes) {
+    if (B.porCuenta(c)) { for (let i = 0; i < c.Cuentas; i++) if (B.mismoDia(B.deIso(B.cFecha(c, i)), u.movDia)) cobrosCli.push({ n: `${c.Nombre} · ${B.nombreCuenta(c, i)}`, c, est: B.cEstadoC(c, i) }); }
+    else if (B.mismoDia(B.deIso(c.ProximoPago), u.movDia)) cobrosCli.push({ n: c.Nombre, c, est: B.cEstado(c) });
+  }
+  const cobros = dia ? [...cobrosCli,
     ...B.d.Planes.filter(p => B.mismoDia(B.deIso(p.ProximoPago), u.movDia)).map(p => ({ n: 'Plan de ' + p.Admin, est: B.estadoDe(B.dias(p.ProximoPago)) }))] : [];
   return `<section class="pagina">
     <h1 class="tit">Movimientos</h1>
