@@ -332,6 +332,17 @@ const ACC = {
     B.toast('Aviso de prueba', ok ? 'Revisa tus notificaciones.' : 'Permite los avisos del teléfono para verlo también como notificación.', ok ? 'Exito' : 'Info');
   },
   revisar: () => B.revisarPagos(true),
+  'actualizar': async () => {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (!reg) { B.toast('Sin actualización automática', `Esta copia (versión ${B.VERSION}) no usa archivos guardados. Vuelve a abrir la página para ver lo último.`, 'Info'); return; }
+      B.toast('Buscando…', `Versión instalada: ${B.VERSION}`, 'Info');
+      await reg.update();
+      const w = reg.waiting || reg.installing;
+      if (w) { await B.esperar(1500); location.reload(); }
+      else { await B.esperar(600); B.toast('Todo al día', `Tienes la versión ${B.VERSION}.`, 'Exito'); B.estadoVersion(); }
+    } catch { B.toast('No se pudo buscar', 'Revisa tu conexión a internet e inténtalo de nuevo.', 'Error'); }
+  },
   'probar-toast': () => B.toast('Comprobante de pago subido', `Se guardó como «${B.hoy().getFullYear()}-${B.pad(B.hoy().getMonth() + 1)} ${B.MESES[B.hoy().getMonth()]}.jpg»`, 'Exito'),
   'probar-dlg': async () => {
     const si = await B.confirmar('¿Así se ven las confirmaciones?', 'Este mensaje es de la propia app: usa tus colores, tu fuente y el estilo cristal si lo tienes activado.', { si: 'Me gusta' });
@@ -421,12 +432,17 @@ document.addEventListener('change', async ev => {
   if (B.sinAlmacen) B.aviso('Este navegador no deja guardar datos (¿modo privado?). Lo que hagas no se conservará al cerrar.');
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(async reg => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(async reg => {
       try {   // en Android con la app instalada, el sistema puede revisar los pagos de vez en cuando
         if ('periodicSync' in reg) await reg.periodicSync.register('revisar-pagos', { minInterval: 12 * 3600 * 1000 });
       } catch { }
     }).catch(() => { });
   }
+  try {   // avisa una sola vez cuando la app pasa a una versión nueva
+    const antes = localStorage.getItem('bluumxsic-ver');
+    if (antes && antes !== B.VERSION) setTimeout(() => B.toast('App actualizada', `Ahora usas la versión ${B.VERSION} (antes ${antes}).`, 'Exito'), 1500);
+    localStorage.setItem('bluumxsic-ver', B.VERSION);
+  } catch { }
   window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); B.ui.instalar = ev; if (B.ui.pag === 'mas') B.render(); });
   window.addEventListener('appinstalled', () => { B.ui.instalar = null; B.toast('App instalada', 'Ya puedes abrirla desde tu pantalla de inicio.', 'Exito'); });
   try { navigator.storage?.persist?.(); } catch { }

@@ -2,6 +2,8 @@
 'use strict';
 const B = window.B = {};
 
+/* Versión de la app: súbela aquí y en sw.js (VERSION) cada vez que publiques cambios. */
+B.VERSION = '1.4';
 B.MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 B.DIAS_CORTOS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 

@@ -46,7 +46,7 @@ son de cada aparato y no se pisan.
 
 ## Actualizar la app
 
-Cuando cambies archivos, sube la carpeta otra vez y sube el número `VERSION` en `sw.js` (por ejemplo `bluumxsic-v2`)
+Cuando cambies archivos, sube la carpeta otra vez y sube el número `VERSION` en `sw.js` (por ejemplo `bluumxsic-v1.5`) y `B.VERSION` en `js/util.js` (mismo número); en Más › Versión verás si quedó al día
 para que los teléfonos descarguen la versión nueva.
 
 ## Probarla en tu PC antes de subirla

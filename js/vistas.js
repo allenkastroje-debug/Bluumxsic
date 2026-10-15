@@ -358,11 +358,26 @@ function vMas() {
     ${sec('msgs', '💬', 'Mensajes emergentes', msgs)}
     ${sec('resp', '💾', 'Respaldo y comprobantes', resp)}
     ${sec('inst', '📲', 'Instalar la app', instalar)}
-    <p class="pie">Bluumxsic · SP-Control (móvil) · tus datos viven solo en este teléfono.</p>
+    <p class="pie">Bluumxsic · SP-Control (móvil) · tus datos viven solo en este teléfono.<br>
+      <b>Versión ${B.VERSION}</b> · <span id="ver-estado">revisando…</span></p>
+    <div class="acciones" style="justify-content:center"><button class="btn fantasma" data-act="actualizar">🔄 Buscar actualización</button></div>
   </section>`;
 }
 
+/* Compara la versión del código con la de los archivos guardados en el teléfono. */
+B.estadoVersion = async () => {
+  const v = $('#ver-estado');
+  if (!v) return;
+  try {
+    const ks = ('caches' in window) ? (await caches.keys()).filter(k => k.startsWith('bluumxsic-v')) : [];
+    if (!ks.length) { v.textContent = 'sin copia sin conexión'; return; }
+    const guardada = ks.map(k => k.replace('bluumxsic-v', '')).sort().pop();
+    v.textContent = guardada === B.VERSION ? '✔ al día' : `⚠ archivos guardados: ${guardada}. Cierra la app y ábrela de nuevo`;
+  } catch { v.textContent = ''; }
+};
+
 B.pintarMas = async () => {
+  B.estadoVersion();
   const el = $('#almacen-estado');
   if (!el) return;
   try {
