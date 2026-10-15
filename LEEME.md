@@ -1,0 +1,55 @@
+# Bluumxsic · SP-Control (móvil)
+
+App para el teléfono (Android y iPhone) con lo mismo que la de Windows: clientes con estados de pago por color,
+planes familiares (administrador + 5), movimientos con calendario, tasa BCV, comprobante de pago obligatorio,
+temas, modo cristal (Liquid Glass), Ajustes y respaldo `.json`. Es una **app web instalable (PWA)**:
+no pasa por tiendas de apps y funciona sin internet una vez abierta.
+
+## 1. Ponerla en internet (una sola vez)
+
+Los teléfonos solo instalan una app web desde una dirección segura (https). Sube **el contenido de esta carpeta**
+a cualquiera de estos servicios gratuitos:
+
+- **Netlify**: entra a `app.netlify.com/drop` y arrastra la carpeta completa. Te da una dirección `https://….netlify.app`.
+- **Cloudflare Pages** o **GitHub Pages**: crea un proyecto nuevo y sube los archivos tal cual (no necesita compilar nada).
+
+Tus datos **no se suben**: se guardan solo en el teléfono. La dirección solo sirve para descargar la app.
+
+## 2. Instalarla en el teléfono
+
+- **Android (Chrome):** abre la dirección › menú ⋮ › **Instalar aplicación**. (También hay un botón en *Más › Instalar la app*.)
+- **iPhone (Safari):** abre la dirección › botón Compartir › **Agregar a pantalla de inicio**.
+
+## 3. Pasar datos entre la PC y el teléfono
+
+Usa el mismo archivo de respaldo en los dos sentidos:
+
+- **PC → teléfono:** en la app de Windows, *Respaldo › Exportar*. Pasa el `.json` al teléfono (WhatsApp, correo, nube, USB)
+  y en el teléfono: *Más › Respaldo y comprobantes › Importar respaldo*.
+- **Teléfono → PC:** *Más › Respaldo › Guardar / compartir respaldo* y en Windows *Respaldo › Importar*.
+
+El respaldo incluye clientes, planes, movimientos y las fotos de los comprobantes. Los ajustes visuales (tema, cristal, fuente)
+son de cada aparato y no se pisan.
+
+## Cosas que conviene saber
+
+- **Avisos de pago:** una app web no puede despertarse sola si está cerrada. Los avisos salen al abrirla (una vez al día,
+  pasada la hora que elijas) y siempre ves el resumen en la pantalla *Resumen*. En Android con la app instalada, el sistema
+  puede revisarla de vez en cuando. En iPhone las notificaciones del sistema solo funcionan con la app en la pantalla de inicio.
+  Activa los permisos en *Más › Avisos de pago*.
+- **Tasa BCV:** se consulta a DolarApi (tasa oficial). Un navegador no puede leer bcv.org.ve directamente, y si no hay
+  internet la puedes escribir a mano tocando el recuadro de la tasa.
+- **Copia de seguridad:** si el teléfono se pierde o borras los datos del navegador, se pierde lo guardado. Haz un respaldo de vez en cuando.
+- **Comprobantes:** las fotos se reducen automáticamente (máx. 1800 px) para que el respaldo no pese demasiado.
+  Se guardan como `2026-10 Octubre.jpg`, en una carpeta por cliente (y `_Planes/` para los administradores);
+  se ven y comparten desde *Comprobantes*.
+
+## Actualizar la app
+
+Cuando cambies archivos, sube la carpeta otra vez y sube el número `VERSION` en `sw.js` (por ejemplo `bluumxsic-v2`)
+para que los teléfonos descarguen la versión nueva.
+
+## Probarla en tu PC antes de subirla
+
+Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m http.server 8080`, luego entra a
+`http://localhost:8080` en Chrome. (En el teléfono solo funciona desde una dirección https.)

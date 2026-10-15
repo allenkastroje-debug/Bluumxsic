@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bluumxsic · SP-Control</title>
+<meta name="theme-color" content="#121212">
+<meta name="description" content="Control de pagos de cuentas de Spotify">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bluumxsic">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="fondo" aria-hidden="true"><i class="orbe o1"></i><i class="orbe o2"></i><i class="orbe o3"></i></div>
+
+<div id="app">
+  <header id="cabecera"></header>
+  <main id="vista" tabindex="-1"></main>
+  <nav id="tabs" aria-label="Secciones"></nav>
+</div>
+
+<div id="capas"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<noscript><p style="padding:24px;font-family:sans-serif">Esta aplicación necesita JavaScript.</p></noscript>
+
+<script src="js/util.js"></script>
+<script src="js/db.js"></script>
+<script src="js/tema.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/logica.js"></script>
+<script src="js/vistas.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
