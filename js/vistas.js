@@ -351,7 +351,6 @@ function vMas() {
       <button class="btn fantasma" data-act="importar">📥 Importar respaldo</button>
       <button class="btn fantasma" data-act="comprobantes" data-t="" data-n="">🧾 Ver todos los comprobantes</button>
     </div>
-    <input type="file" id="archivo-respaldo" hidden>
     <p class="nota" id="almacen-estado">Calculando almacenamiento…</p>
     <div class="acciones"><button class="btn fantasma peligro-t" data-act="reset-aj">Restablecer ajustes de la app</button></div>`;
 

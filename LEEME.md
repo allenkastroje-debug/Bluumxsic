@@ -65,3 +65,8 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - **Si olvidas la contraseña no hay forma de recuperar el respaldo.**
 - El cifrado necesita que la app se abra por https (GitHub Pages lo cumple).
 - Al actualizar, abre la app y revisa que abajo diga «Versión 1.7».
+
+## Versión 1.8 — Mensaje de carga al importar
+- Al elegir un respaldo aparece una pantalla con ruedita: «Archivo recibido» (con nombre y tamaño), «Leyendo el respaldo…» y «Importando…».
+- Si el teléfono no entrega ningún archivo, ahora lo avisa en vez de quedarse callado.
+- Si no ves ni «Archivo recibido», el teléfono no está pasando el archivo a la app: prueba elegirlo desde «Descargas»/«Archivos» y no desde la galería.

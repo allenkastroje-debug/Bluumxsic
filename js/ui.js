@@ -29,6 +29,21 @@ B.toast = (titulo, texto = '', tipo = 'Exito') => {
   return quitar;
 };
 
+/* ───── Cargando: pantalla con ruedita mientras se hace algo largo (queda por debajo de los cuadros) ───── */
+B.cargando = (titulo, texto = '') => {
+  const el = document.createElement('div');
+  el.className = 'cargando';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="cargando-caja"><span class="rueda"></span><b></b><small></small></div>`;
+  const b = el.querySelector('b'), sm = el.querySelector('small');
+  b.textContent = titulo; sm.textContent = texto;
+  document.body.appendChild(el);
+  return {
+    texto: (t, x = '') => { b.textContent = t; sm.textContent = x; },
+    cerrar: () => { el.remove(); },
+  };
+};
+
 /* ───── Diálogo (devuelve una promesa con true/false) ───── */
 B.dialogo = ({ titulo, texto = '', tipo = 'Info', si = 'Aceptar', no = null, peligro = false }) => new Promise(res => {
   const capas = document.getElementById('capas'), t = B.TIPOS[tipo] || B.TIPOS.Info;

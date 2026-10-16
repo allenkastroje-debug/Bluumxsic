@@ -371,7 +371,7 @@ const ACC = {
 
   'exp-compartir': () => exportar(true),
   'exp-descargar': () => exportar(false),
-  importar: () => $('#archivo-respaldo').click(),
+  importar: () => { B.toast('Elige tu respaldo', 'Busca el archivo .zip, .bluumxsic o .json en tu teléfono.', 'Info'); $('#archivo-respaldo').click(); },
   'reset-aj': async () => {
     if (!await B.confirmar('Restablecer ajustes', 'Vuelven el tema, el nombre, el logo, la letra, el tamaño y la distribución a como venían de fábrica.\nTus clientes, pagos y comprobantes no cambian.', { si: 'Restablecer', peligro: true })) return;
     B.aj = Object.assign({}, B.AJ_DEF); aplicarAj(); B.toast('Ajustes restablecidos', '', 'Info');
@@ -407,16 +407,23 @@ async function exportar(compartir) {
 }
 
 async function importar(file) {
+  const kb = file.size >= 1048576 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB';
+  const c = B.cargando('Archivo recibido', `${file.name || 'respaldo'} · ${kb}`);
   try {
+    await B.esperar(350);                       // para que alcance a verse
+    c.texto('Leyendo el respaldo…', 'Un momento, no cierres la app.');
     const r = await B.leerRespaldo(file), d = r.Datos;
+    c.cerrar();
     const fecha = r.Fecha ? B.horaTexto(r.Fecha) : '';
     if (!await B.confirmar('Importar respaldo',
       `Este respaldo${fecha ? ' es del ' + fecha : ''} y trae:\n\n• ${(d.Clientes || []).length} cliente(s)\n• ${(d.Planes || []).length} plan(es)\n• ${(d.Movimientos || []).length} movimiento(s)\n• ${r.Archivos.length} imagen(es) de prueba\n\nSe reemplazarán los datos actuales (antes se guarda una copia de seguridad automática). ¿Continuar?`,
       { si: 'Importar', peligro: true })) return;
-    const n = await B.restaurar(r);
+    const c2 = B.cargando('Importando…', 'Guardando tus datos e imágenes.');
+    let n;
+    try { n = await B.restaurar(r); } finally { c2.cerrar(); }
     B.render();
     B.info(`Se restauraron los datos y ${n} imagen(es).`, 'Respaldo importado', 'Exito');
-  } catch (err) { if (err && err.cancelado) return; B.error('No se pudo importar el respaldo: ' + (err.message || err)); }
+  } catch (err) { c.cerrar(); if (err && err.cancelado) return; B.error('No se pudo importar el respaldo: ' + (err.message || err)); }
 }
 
 /* ───────────── Eventos globales ───────────── */
@@ -437,7 +444,12 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', async ev => {
   const t = ev.target;
-  if (t.id === 'archivo-respaldo' && t.files[0]) { const f = t.files[0]; importar(f).finally(() => { try { t.value = ''; } catch { } }); return; }
+  if (t.id === 'archivo-respaldo') {
+    const f = t.files && t.files[0];
+    if (!f) { B.aviso('El teléfono no entregó ningún archivo. Intenta elegirlo desde «Descargas» o desde «Archivos» en lugar de la galería.'); return; }
+    importar(f).finally(() => { try { t.value = ''; } catch { } });
+    return;
+  }
   if (t.id === 'hex-acento' || t.id === 'hex-logo') {
     const v = t.value.trim();
     if (t.id === 'hex-logo' && !v) { B.aj.logoColor = ''; aplicarAj(); return; }
