@@ -482,6 +482,17 @@ const validarRespaldo = r => {
 B.leerRespaldo = async file => {
   if (!file.size) throw new Error('El archivo está vacío (0 KB). Vuelve a copiarlo; puede que la extracción quedara incompleta.');
   const cab = await B.zip.bytes(file.slice(0, 4));
+  if (B.cripto.esCifrado(cab)) {   // respaldo con contraseña: se pide y se abre en memoria
+    const todo = await B.zip.bytes(file);
+    let abierto = null;
+    const clave = await B.pedirClave({
+      titulo: 'Respaldo protegido', intro: 'Este respaldo tiene contraseña. Escríbela para abrirlo.',
+      validar: async c => { try { abierto = await B.cripto.descifrar(todo, c); return true; } catch (e) { return e.clave ? e.message : (e.message || 'No se pudo abrir.'); } },
+    });
+    if (clave === null) { const e = new Error('cancelado'); e.cancelado = true; throw e; }
+    file = new Blob([abierto], { type: 'application/zip' });
+    return B.leerRespaldo(file);
+  }
   if (cab[0] === 0x50 && cab[1] === 0x4B) {
     const lista = await B.zip.leer(file);
     const ed = lista.find(x => x.nombre.toLowerCase() === 'datos.json');

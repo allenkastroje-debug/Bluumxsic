@@ -56,3 +56,12 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 
 ## Versión 1.6
 - Clientes con varias cuentas: casilla «Cada cuenta con su propia fecha de pago». El monto es por cuenta, cada cuenta tiene su fecha y se paga una por una (✔ Pagó en cada cuenta). El color del cliente sigue la fecha más próxima. Compatible con la app de PC v2.3.
+
+## Versión 1.7 — Contraseña para el respaldo
+- Al exportar, la app pregunta si quieres ponerle contraseña (mínimo 4 caracteres, con confirmación) o guardarlo sin ella.
+- Con contraseña el archivo es `.bluumxsic` (cifrado AES-256-GCM). Sin contraseña sigue siendo `.zip`.
+- Al importar un `.bluumxsic` se pide la contraseña; si te equivocas puedes reintentar.
+- Es el mismo formato que la app de PC (v2.4): lo que protegas en un lado se abre en el otro.
+- **Si olvidas la contraseña no hay forma de recuperar el respaldo.**
+- El cifrado necesita que la app se abra por https (GitHub Pages lo cumple).
+- Al actualizar, abre la app y revisa que abajo diga «Versión 1.7».

@@ -316,3 +316,6 @@ textarea { resize:vertical; }
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
 }
 @media (min-width:700px) { #vista { padding-bottom:130px; } }
+
+.nota.err { color:var(--danger); font-weight:600; }
+.nota[hidden] { display:none; }

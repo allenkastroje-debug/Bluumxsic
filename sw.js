@@ -1,8 +1,8 @@
 /* Service worker: deja la app disponible sin internet y revisa los pagos cuando el sistema lo permite. */
-const VERSION = 'bluumxsic-v1.6';
+const VERSION = 'bluumxsic-v1.7';
 const ARCHIVOS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
-  'js/util.js', 'js/db.js', 'js/zip.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',
+  'js/util.js', 'js/db.js', 'js/zip.js', 'js/cripto.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/logo-mask.png', 'icons/apple-touch-icon.png',
 ];
 

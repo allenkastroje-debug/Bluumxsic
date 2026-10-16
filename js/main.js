@@ -384,17 +384,25 @@ const ACC = {
 };
 
 async function exportar(compartir) {
-  const quitar = B.toast('Preparando respaldo…', 'Incluye tus datos y las fotos de comprobantes.', 'Info');
+  // contraseña opcional: '' = sin contraseña, null = canceló
+  const clave = await B.pedirClave({
+    titulo: 'Proteger el respaldo', nueva: true,
+    intro: 'Si lo envías por WhatsApp o correo, ponle una contraseña para que solo tú puedas abrirlo. También puedes guardarlo sin contraseña.',
+  });
+  if (clave === null) return;
+  const quitar = B.toast('Preparando respaldo…', clave ? 'Incluye tus datos y las fotos, cifrados con tu contraseña.' : 'Incluye tus datos y las fotos de comprobantes.', 'Info');
   try {
-    const { blob, nombre, n } = await B.crearRespaldo();
+    let { blob, nombre, n } = await B.crearRespaldo();
+    if (clave) { blob = await B.cripto.cifrar(blob, clave); nombre = nombre.replace(/\.zip$/, '.bluumxsic'); }
     quitar();
-    const file = new File([blob], nombre, { type: 'application/zip' });
+    const tipo = clave ? 'application/octet-stream' : 'application/zip';
+    const file = new File([blob], nombre, { type: tipo });
     if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas.`, 'Exito'); return; }
+      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas${clave ? ' · con contraseña' : ''}.`, 'Exito'); return; }
       catch (err) { if (err.name === 'AbortError') return; }
     }
     B.descargar(blob, nombre);
-    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).`, 'Respaldo guardado', 'Exito');
+    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba${clave ? ', protegidos con contraseña' : ''}.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).${clave ? '\nNo olvides la contraseña: sin ella no se puede abrir.' : ''}`, 'Respaldo guardado', 'Exito');
   } catch (err) { quitar(); B.error('No se pudo crear el respaldo: ' + (err.message || err)); }
 }
 
@@ -408,7 +416,7 @@ async function importar(file) {
     const n = await B.restaurar(r);
     B.render();
     B.info(`Se restauraron los datos y ${n} imagen(es).`, 'Respaldo importado', 'Exito');
-  } catch (err) { B.error('No se pudo importar el respaldo: ' + (err.message || err)); }
+  } catch (err) { if (err && err.cancelado) return; B.error('No se pudo importar el respaldo: ' + (err.message || err)); }
 }
 
 /* ───────────── Eventos globales ───────────── */
