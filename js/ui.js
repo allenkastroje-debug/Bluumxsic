@@ -82,7 +82,7 @@ B.dialogo = ({ titulo, texto = '', tipo = 'Info', si = 'Aceptar', no = null, pel
 B.confirmar = (titulo, texto, o = {}) => B.dialogo({
   titulo, texto, tipo: o.peligro ? 'Peligro' : 'Pregunta', si: o.si || 'Aceptar', no: o.no || 'Cancelar', peligro: !!o.peligro,
 });
-B.info = (texto, titulo = 'Bluumxsic', tipo = 'Info') => B.dialogo({ titulo, texto, tipo, si: 'Entendido' });
+B.info = (texto, titulo = 'SP-Control', tipo = 'Info') => B.dialogo({ titulo, texto, tipo, si: 'Entendido' });
 B.aviso = texto => B.info(texto, 'Revisa esto', 'Aviso');
 B.error = texto => B.info(texto, 'Algo salió mal', 'Error');
 

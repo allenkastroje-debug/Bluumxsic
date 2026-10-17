@@ -361,7 +361,7 @@ const ACC = {
     catch { B.aviso('Este navegador no permite avisos del sistema.'); }
   },
   'probar-aviso': async () => {
-    const ok = await B.notificar('Bluumxsic · aviso de prueba', 'Así te llegarán los avisos de pago.');
+    const ok = await B.notificar('SP-Control · aviso de prueba', 'Así te llegarán los avisos de pago.');
     B.toast('Aviso de prueba', ok ? 'Revisa tus notificaciones.' : 'Permite los avisos del teléfono para verlo también como notificación.', ok ? 'Exito' : 'Info');
   },
   revisar: () => B.revisarPagos(true),
@@ -471,8 +471,6 @@ document.addEventListener('change', async ev => {
     if (t.id === 'hex-acento') B.aj.acento = hex; else B.aj.logoColor = hex;
     aplicarAj(); return;
   }
-  if (t.id === 'aj-nombre') { B.aj.nombre = t.value.trim() || B.AJ_DEF.nombre; aplicarAj(); return; }
-  if (t.id === 'aj-sub') { B.aj.sub = t.value.trim(); aplicarAj(); return; }
   if (t.id === 'aj-hora') { const n = parseInt(t.value, 10); B.d.AvisoHora = n >= 0 && n <= 23 ? n : B.d.AvisoHora; t.value = B.d.AvisoHora; await B.guardar(); return; }
   if (t.id === 'aj-dias') { const n = parseInt(t.value, 10); B.d.DiasCerca = n >= 0 && n <= 30 ? n : B.d.DiasCerca; t.value = B.d.DiasCerca; await B.guardar(); B.renderTabs(); return; }
 });

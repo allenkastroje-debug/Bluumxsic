@@ -306,15 +306,6 @@ function vMas() {
     <h3>Colores de estado</h3>
     <div class="fila-chips envolver"><span class="chip" style="--st:var(--ok)">✔ Pagado</span><span class="chip" style="--st:var(--warn)">◔ Por vencer</span><span class="chip" style="--st:var(--hoy)">● Vence hoy</span><span class="chip" style="--st:var(--danger)">✖ Debe</span></div>`;
 
-  const identidad = `
-    <label class="campo"><span>Nombre de la app</span><input type="text" id="aj-nombre" value="${e(a.nombre)}" maxlength="30"></label>
-    <label class="campo"><span>Subtítulo</span><input type="text" id="aj-sub" value="${e(a.sub)}" maxlength="30"></label>
-    ${toggle('logo', 'Mostrar el logo', a.logo)}
-    <h3>Color del logo</h3>
-    ${colores('logocolor', a.logoColor)}
-    <div class="fila-chips"><button class="chipbtn ${!a.logoColor ? 'act' : ''}" data-act="aj" data-g="logocolor" data-v="">Igual que el acento</button></div>
-    <label class="campo en-linea"><span>Color propio</span><input type="text" id="hex-logo" value="${e(a.logoColor)}" placeholder="#1DB954" maxlength="7" autocapitalize="characters" spellcheck="false"></label>`;
-
   const letra = `
     <h3>Fuente</h3>
     <div class="fila-chips envolver">${B.FUENTES.map(([n, f]) => `<button class="chipbtn ${a.fuente === n ? 'act' : ''}" data-act="aj" data-g="fuente" data-v="${e(n)}" style="font-family:${e(f)}">${e(n)}</button>`).join('')}</div>
@@ -367,14 +358,13 @@ function vMas() {
   return `<section class="pagina">
     <h1 class="tit">Más</h1>
     ${sec('apariencia', '🎨', 'Apariencia', apariencia)}
-    ${sec('identidad', '✨', 'Nombre y logo', identidad)}
     ${sec('letra', '🔤', 'Letra y tamaño', letra)}
     ${sec('distrib', '📐', 'Distribución', distrib)}
     ${sec('avisos', '🔔', 'Avisos de pago', avisos)}
     ${sec('msgs', '💬', 'Mensajes emergentes', msgs)}
     ${sec('resp', '💾', 'Respaldo y comprobantes', resp)}
     ${sec('inst', '📲', 'Instalar la app', instalar)}
-    <p class="pie">Bluumxsic · SP-Control (móvil) · tus datos viven solo en este teléfono.<br>
+    <p class="pie">SP-Control · Allen.Inc (Ai) (móvil) · tus datos viven solo en este teléfono.<br>
       <b>Versión ${B.VERSION}</b> · <span id="ver-estado">revisando…</span></p>
     <div class="acciones" style="justify-content:center"><button class="btn fantasma" data-act="actualizar">🔄 Buscar actualización</button></div>
   </section>`;

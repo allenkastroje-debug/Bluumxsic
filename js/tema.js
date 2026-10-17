@@ -30,7 +30,7 @@ B.FUENTES = [
 B.AJ_DEF = {
   preset: 'Spotify Oscuro', acento: '#1DB954',
   cristal: false, nivel: 1, animado: true,
-  nombre: 'Bluumxsic', sub: 'SP-Control', logo: true, logoColor: '',
+  nombre: 'SP-Control', sub: 'Allen.Inc (Ai)', logo: true, logoColor: '',
   fuente: 'Sistema', escala: 100, margen: 16, mostrarTasa: true, toast: 4,
 };
 

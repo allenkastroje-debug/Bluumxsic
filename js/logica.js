@@ -62,6 +62,7 @@ B.cargar = async () => {
   catch (e) { B.sinAlmacen = true; }
   B.d = B.normalizar(d || {});
   B.aj = Object.assign({}, B.AJ_DEF, a || {});
+  B.aj.nombre = B.AJ_DEF.nombre; B.aj.sub = B.AJ_DEF.sub; B.aj.logo = true;   // nombre fijo: ya no se edita desde Ajustes
 };
 
 B.guardar = () => B.db.set('kv', 'datos', B.d).catch(() =>
@@ -412,7 +413,7 @@ B.revisarPagos = async (manual = false) => {
   if (manual) {
     if (!hay) { B.toast('Todo al día', 'No hay pagos vencidos, para hoy ni por vencer.', 'Exito'); return; }
     B.toast('Pagos pendientes', texto, 'Aviso');
-    await B.notificar('Bluumxsic · pagos', texto);
+    await B.notificar('SP-Control · pagos', texto);
     return;
   }
   if (!B.d.AvisosActivos || !hay) return;
@@ -421,7 +422,7 @@ B.revisarPagos = async (manual = false) => {
   B.d.UltimoAviso = hoyIso;
   await B.guardar();
   B.toast('Pagos pendientes', texto, 'Aviso');
-  await B.notificar('Bluumxsic · pagos', texto);
+  await B.notificar('SP-Control · pagos', texto);
 };
 
 /* ───────────── Respaldo (.zip) ───────────── */

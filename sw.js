@@ -1,5 +1,5 @@
 /* Service worker: deja la app disponible sin internet y revisa los pagos cuando el sistema lo permite. */
-const VERSION = 'bluumxsic-v1.9';
+const VERSION = 'bluumxsic-v2.0';
 const ARCHIVOS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/util.js', 'js/db.js', 'js/zip.js', 'js/cripto.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',
@@ -68,7 +68,7 @@ self.addEventListener('periodicsync', ev => {
     if (debe) partes.push(`${debe} atrasado(s)`);
     if (hoyN) partes.push(`${hoyN} vencen hoy`);
     if (prox) partes.push(`${prox} por vencer`);
-    await self.registration.showNotification('Bluumxsic · pagos', { body: partes.join(' · '), icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'pagos' });
+    await self.registration.showNotification('SP-Control · pagos', { body: partes.join(' · '), icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'pagos' });
   })());
 });
 

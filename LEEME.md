@@ -75,3 +75,8 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - **Movimientos rediseñados:** cada movimiento tiene ahora una fila de botones propia («Comprobante» y «Eliminar») con espacio libre a la derecha, para que el botón ＋ flotante ya no choque con ellos.
 - **Eliminar comprobantes:** al abrir una foto aparece «Eliminar». En «Ver todos los comprobantes» también salen las fotos sueltas sin registro (por ejemplo, pruebas de versiones viejas) para poder borrarlas. El movimiento que usaba la foto se queda, solo sin imagen.
 - **Respaldo siempre con contraseña:** ya no existe «Sin contraseña» (mínimo 6 caracteres). Los respaldos antiguos .zip y .json se siguen importando.
+
+## Versión 2.0 — Nombre fijo
+- La app se llama **SP-Control** con el subtítulo **Allen.Inc (Ai)** (cabecera, título de la pestaña, nombre al instalarla y avisos).
+- Se quitó la sección «Nombre y logo» de Más → Ajustes.
+- Al actualizar, es posible que el teléfono siga mostrando el nombre anterior en el icono de la pantalla de inicio: si quieres que cambie, desinstala el acceso directo e instálala de nuevo (los datos no se pierden al reinstalar solo el acceso directo, pero haz antes un respaldo por seguridad).
