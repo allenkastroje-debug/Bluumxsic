@@ -88,3 +88,7 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 
 ## Versión 2.1 — Pantalla de inicio
 - Al abrir la app aparece una pantalla con el logo que se va «construyendo» de abajo hacia arriba, el nombre y una barrita de carga; luego se desvanece (dura unos 2,3 segundos). Si el teléfono tiene activada la opción de reducir animaciones, se muestra casi al instante.
+
+## Versión 2.2 — Pantalla de inicio por capas
+- El logo se arma en tres tiempos: primero los cuatro brazos de la X llegan desde las esquinas hacia el centro, luego la espada cae desde arriba y, al golpear (con un destello), las alas salen disparadas en diagonal. Después aparecen el nombre y el subtítulo. Dura unos 3,5 segundos.
+- Para esto se agregaron siete imágenes en `icons/` (`logo-x-tl`, `logo-x-tr`, `logo-x-bl`, `logo-x-br`, `logo-espada`, `logo-ala-i`, `logo-ala-d`): son el mismo logo separado por piezas. Si subes la carpeta a GitHub, sube también esos archivos.

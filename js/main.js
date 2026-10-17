@@ -480,7 +480,7 @@ B.quitarSplash = () => {
   const s = document.getElementById('splash');
   if (!s) return;
   const reducida = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const falta = Math.max(0, (reducida ? 400 : 2300) - performance.now());
+  const falta = Math.max(0, (reducida ? 400 : 3500) - performance.now());
   setTimeout(() => { s.classList.add('sale'); setTimeout(() => s.remove(), 650); }, falta);
 };
 
