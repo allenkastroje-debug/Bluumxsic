@@ -85,3 +85,6 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - Los respaldos usan la extensión `.spcontrol` y se llaman `SP-Control-respaldo-….spcontrol`. Los `.bluumxsic` de antes se siguen abriendo (es el mismo formato).
 - Por dentro, la base de datos del teléfono pasa a llamarse `spcontrol`. La primera vez que abres esta versión **copia sola** tus datos y fotos de la base anterior (no borra la anterior). Aun así, haz un respaldo antes de actualizar.
 - La copia para uso sin conexión también cambia de nombre (`spcontrol-v2.0.1`); la anterior se borra sola.
+
+## Versión 2.1 — Pantalla de inicio
+- Al abrir la app aparece una pantalla con el logo que se va «construyendo» de abajo hacia arriba, el nombre y una barrita de carga; luego se desvanece (dura unos 2,3 segundos). Si el teléfono tiene activada la opción de reducir animaciones, se muestra casi al instante.

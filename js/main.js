@@ -475,11 +475,21 @@ document.addEventListener('change', async ev => {
   if (t.id === 'aj-dias') { const n = parseInt(t.value, 10); B.d.DiasCerca = n >= 0 && n <= 30 ? n : B.d.DiasCerca; t.value = B.d.DiasCerca; await B.guardar(); B.renderTabs(); return; }
 });
 
+/* Pantalla de inicio: se queda lo justo para que se vea construirse el logo y luego se desvanece. */
+B.quitarSplash = () => {
+  const s = document.getElementById('splash');
+  if (!s) return;
+  const reducida = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const falta = Math.max(0, (reducida ? 400 : 2300) - performance.now());
+  setTimeout(() => { s.classList.add('sale'); setTimeout(() => s.remove(), 650); }, falta);
+};
+
 /* ───────────── Arranque ───────────── */
 (async function iniciar() {
   await B.cargar();
   B.aplicarTema();
   B.render();
+  B.quitarSplash();
   if (B.sinAlmacen) B.aviso('Este navegador no deja guardar datos (¿modo privado?). Lo que hagas no se conservará al cerrar.');
 
   if ('serviceWorker' in navigator) {

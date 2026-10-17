@@ -16,6 +16,13 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="splash" role="status" aria-label="Cargando SP-Control">
+  <div class="sp-logo" aria-hidden="true"><i class="sp-fantasma"></i><i class="sp-relleno"></i><i class="sp-barrido"></i></div>
+  <div class="sp-nombre">SP-Control</div>
+  <div class="sp-sub">Allen.Inc (Ai)</div>
+  <div class="sp-barra" aria-hidden="true"><b></b></div>
+</div>
+<script>setTimeout(function () { var s = document.getElementById('splash'); if (s) s.remove(); }, 9000);</script>
 <div id="fondo" aria-hidden="true"><i class="orbe o1"></i><i class="orbe o2"></i><i class="orbe o3"></i></div>
 
 <div id="app">
