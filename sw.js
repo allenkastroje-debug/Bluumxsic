@@ -1,5 +1,5 @@
 /* Service worker: deja la app disponible sin internet y revisa los pagos cuando el sistema lo permite. */
-const VERSION = 'bluumxsic-v2.0';
+const VERSION = 'spcontrol-v2.0.1';
 const ARCHIVOS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/util.js', 'js/db.js', 'js/zip.js', 'js/cripto.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',
@@ -34,8 +34,11 @@ self.addEventListener('fetch', ev => {
 
 /* ───── Revisión de pagos en segundo plano (solo Android con la app instalada; el sistema decide cuándo) ───── */
 function leerDatos() {
+  return leerDatosDe('spcontrol').then(d => d || leerDatosDe('bluumxsic'));   // la segunda es la base de versiones anteriores
+}
+function leerDatosDe(nombre) {
   return new Promise(ok => {
-    const r = indexedDB.open('bluumxsic', 1);
+    const r = indexedDB.open(nombre, 1);
     r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('pruebas'); };
     r.onerror = () => ok(null);
     r.onsuccess = () => {

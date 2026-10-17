@@ -1,4 +1,4 @@
-# Bluumxsic · SP-Control (móvil)
+# SP-Control · Allen.Inc (Ai) (móvil)
 
 App para el teléfono (Android y iPhone) con lo mismo que la de Windows: clientes con estados de pago por color,
 planes familiares (administrador + 5), movimientos con calendario, tasa BCV, comprobante de pago obligatorio,
@@ -46,7 +46,7 @@ son de cada aparato y no se pisan.
 
 ## Actualizar la app
 
-Cuando cambies archivos, sube la carpeta otra vez y sube el número `VERSION` en `sw.js` (por ejemplo `bluumxsic-v1.5`) y `B.VERSION` en `js/util.js` (mismo número); en Más › Versión verás si quedó al día
+Cuando cambies archivos, sube la carpeta otra vez y sube el número `VERSION` en `sw.js` (por ejemplo `spcontrol-v1.5`) y `B.VERSION` en `js/util.js` (mismo número); en Más › Versión verás si quedó al día
 para que los teléfonos descarguen la versión nueva.
 
 ## Probarla en tu PC antes de subirla
@@ -59,8 +59,8 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 
 ## Versión 1.7 — Contraseña para el respaldo
 - Al exportar, la app pregunta si quieres ponerle contraseña (mínimo 4 caracteres, con confirmación) o guardarlo sin ella.
-- Con contraseña el archivo es `.bluumxsic` (cifrado AES-256-GCM). Sin contraseña sigue siendo `.zip`.
-- Al importar un `.bluumxsic` se pide la contraseña; si te equivocas puedes reintentar.
+- Con contraseña el archivo es `.spcontrol` (cifrado AES-256-GCM). Sin contraseña sigue siendo `.zip`.
+- Al importar un `.spcontrol` se pide la contraseña; si te equivocas puedes reintentar.
 - Es el mismo formato que la app de PC (v2.4): lo que protegas en un lado se abre en el otro.
 - **Si olvidas la contraseña no hay forma de recuperar el respaldo.**
 - El cifrado necesita que la app se abra por https (GitHub Pages lo cumple).
@@ -80,3 +80,8 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - La app se llama **SP-Control** con el subtítulo **Allen.Inc (Ai)** (cabecera, título de la pestaña, nombre al instalarla y avisos).
 - Se quitó la sección «Nombre y logo» de Más → Ajustes.
 - Al actualizar, es posible que el teléfono siga mostrando el nombre anterior en el icono de la pantalla de inicio: si quieres que cambie, desinstala el acceso directo e instálala de nuevo (los datos no se pierden al reinstalar solo el acceso directo, pero haz antes un respaldo por seguridad).
+
+## Versión 2.0.1 (de pruebas) — Nombre cambiado por completo
+- Los respaldos usan la extensión `.spcontrol` y se llaman `SP-Control-respaldo-….spcontrol`. Los `.bluumxsic` de antes se siguen abriendo (es el mismo formato).
+- Por dentro, la base de datos del teléfono pasa a llamarse `spcontrol`. La primera vez que abres esta versión **copia sola** tus datos y fotos de la base anterior (no borra la anterior). Aun así, haz un respaldo antes de actualizar.
+- La copia para uso sin conexión también cambia de nombre (`spcontrol-v2.0.1`); la anterior se borra sola.

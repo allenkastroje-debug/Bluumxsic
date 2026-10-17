@@ -1,4 +1,4 @@
-/* Bluumxsic · SP-Control (móvil). Los colores los pone js/tema.js según el tema, el acento y el modo cristal. */
+/* SP-Control · Allen.Inc (Ai) (móvil). Los colores los pone js/tema.js según el tema, el acento y el modo cristal. */
 :root {
   --bg:#121212; --side:#0b0b0b; --surface:#181818; --surface2:#262626; --line:#333; --panel:#181818;
   --text:#fff; --muted:#b3b3b3; --accent:#1db954; --accent-soft:#6fe08f; --accent-deep:#10672f; --accent-faint:rgb(29 185 84 / .2);

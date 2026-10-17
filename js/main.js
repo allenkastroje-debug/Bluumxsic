@@ -384,7 +384,7 @@ const ACC = {
 
   'exp-compartir': () => exportar(true),
   'exp-descargar': () => exportar(false),
-  importar: () => { B.toast('Elige tu respaldo', 'Busca el archivo .zip, .bluumxsic o .json en tu teléfono.', 'Info'); $('#archivo-respaldo').click(); },
+  importar: () => { B.toast('Elige tu respaldo', 'Busca el archivo .spcontrol (o un .bluumxsic, .zip o .json antiguo) en tu teléfono.', 'Info'); $('#archivo-respaldo').click(); },
   'reset-aj': async () => {
     if (!await B.confirmar('Restablecer ajustes', 'Vuelven el tema, el nombre, el logo, la letra, el tamaño y la distribución a como venían de fábrica.\nTus clientes, pagos y comprobantes no cambian.', { si: 'Restablecer', peligro: true })) return;
     B.aj = Object.assign({}, B.AJ_DEF); aplicarAj(); B.toast('Ajustes restablecidos', '', 'Info');
@@ -397,7 +397,7 @@ const ACC = {
 };
 
 async function exportar(compartir) {
-  // la contraseña es obligatoria: el respaldo siempre sale cifrado (.bluumxsic)
+  // la contraseña es obligatoria: el respaldo siempre sale cifrado (.spcontrol)
   const clave = await B.pedirClave({
     titulo: 'Proteger el respaldo', nueva: true,
     intro: 'El respaldo lleva tus clientes, pagos y comprobantes, así que siempre se guarda con contraseña.',
@@ -407,11 +407,11 @@ async function exportar(compartir) {
   try {
     let { blob, nombre, n } = await B.crearRespaldo();
     blob = await B.cripto.cifrar(blob, clave);
-    nombre = nombre.replace(/\.zip$/, '.bluumxsic');
+    nombre = nombre.replace(/\.zip$/, '.spcontrol');
     quitar();
     const file = new File([blob], nombre, { type: 'application/octet-stream' });
     if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas · con contraseña.`, 'Exito'); return; }
+      try { await navigator.share({ files: [file], title: 'Respaldo SP-Control' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas · con contraseña.`, 'Exito'); return; }
       catch (err) { if (err.name === 'AbortError') return; }
     }
     B.descargar(blob, nombre);
@@ -490,9 +490,9 @@ document.addEventListener('change', async ev => {
     }).catch(() => { });
   }
   try {   // avisa una sola vez cuando la app pasa a una versión nueva
-    const antes = localStorage.getItem('bluumxsic-ver');
+    const antes = localStorage.getItem('spcontrol-ver') || localStorage.getItem('bluumxsic-ver');
     if (antes && antes !== B.VERSION) setTimeout(() => B.toast('App actualizada', `Ahora usas la versión ${B.VERSION} (antes ${antes}).`, 'Exito'), 1500);
-    localStorage.setItem('bluumxsic-ver', B.VERSION);
+    localStorage.setItem('spcontrol-ver', B.VERSION); localStorage.removeItem('bluumxsic-ver');
   } catch { }
   window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); B.ui.instalar = ev; if (B.ui.pag === 'mas') B.render(); });
   window.addEventListener('appinstalled', () => { B.ui.instalar = null; B.toast('App instalada', 'Ya puedes abrirla desde tu pantalla de inicio.', 'Exito'); });

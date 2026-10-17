@@ -339,7 +339,7 @@ function vMas() {
     <div class="acciones"><button class="btn" data-act="probar-toast">Probar mensaje</button><button class="btn fantasma" data-act="probar-dlg">Probar confirmación</button></div>`;
 
   const resp = `
-    <p class="nota">Un archivo .bluumxsic con tus datos y las fotos de comprobantes, siempre protegido con la contraseña que elijas (si la olvidas no se puede recuperar). Es el mismo formato de la app de Windows. También se importan los respaldos antiguos .zip y .json.</p>
+    <p class="nota">Un archivo .spcontrol con tus datos y las fotos de comprobantes, siempre protegido con la contraseña que elijas (si la olvidas no se puede recuperar). Es el mismo formato de la app de Windows. También se importan los respaldos antiguos (.bluumxsic, .zip y .json).</p>
     <div class="acciones">
       ${navigator.canShare ? '<button class="btn" data-act="exp-compartir">📤 Guardar / compartir respaldo</button><button class="btn fantasma" data-act="exp-descargar">⬇ Descargar</button>'
         : '<button class="btn" data-act="exp-descargar">⬇ Descargar respaldo</button>'}
@@ -375,9 +375,9 @@ B.estadoVersion = async () => {
   const v = $('#ver-estado');
   if (!v) return;
   try {
-    const ks = ('caches' in window) ? (await caches.keys()).filter(k => k.startsWith('bluumxsic-v')) : [];
+    const ks = ('caches' in window) ? (await caches.keys()).filter(k => k.startsWith('spcontrol-v')) : [];
     if (!ks.length) { v.textContent = 'sin copia sin conexión'; return; }
-    const guardada = ks.map(k => k.replace('bluumxsic-v', '')).sort().pop();
+    const guardada = ks.map(k => k.replace('spcontrol-v', '')).sort().pop();
     v.textContent = guardada === B.VERSION ? '✔ al día' : `⚠ archivos guardados: ${guardada}. Cierra la app y ábrela de nuevo`;
   } catch { v.textContent = ''; }
 };

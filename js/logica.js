@@ -452,10 +452,10 @@ B.crearRespaldo = async () => {
     Tasa: d.Tasa, TasaActualizada: d.TasaActualizada, AutoActualizar: d.AutoActualizar,
     AvisosActivos: d.AvisosActivos, AvisoHora: d.AvisoHora, DiasCerca: d.DiasCerca, UltimoAviso: d.UltimoAviso,
   };
-  const json = JSON.stringify({ Version: 2, App: 'Bluumxsic SP-Control', Fecha: B.ahoraIso(), Datos: datos, Archivos: [] }, null, 1);
+  const json = JSON.stringify({ Version: 2, App: 'SP-Control', Fecha: B.ahoraIso(), Datos: datos, Archivos: [] }, null, 1);
   entradas.push({ nombre: 'datos.json', datos: json });
   const n = new Date();
-  const nombre = `Bluumxsic-respaldo-${n.getFullYear()}${B.pad(n.getMonth() + 1)}${B.pad(n.getDate())}-${B.pad(n.getHours())}${B.pad(n.getMinutes())}.zip`;
+  const nombre = `SP-Control-respaldo-${n.getFullYear()}${B.pad(n.getMonth() + 1)}${B.pad(n.getDate())}-${B.pad(n.getHours())}${B.pad(n.getMinutes())}.zip`;
   return { blob: await B.zip.crear(entradas), nombre, n: claves.length };
 };
 
@@ -475,7 +475,7 @@ B.leerArchivoTexto = async file => {
 };
 
 const validarRespaldo = r => {
-  if (!r || typeof r !== 'object' || !r.Datos || !(r.Version >= 1)) throw new Error('Este archivo no es un respaldo de Bluumxsic.');
+  if (!r || typeof r !== 'object' || !r.Datos || !(r.Version >= 1)) throw new Error('Este archivo no es un respaldo de SP-Control.');
 };
 
 /* Acepta el .zip nuevo (datos.json + comprobantes/) y el .json antiguo (fotos en Base64).
@@ -497,7 +497,7 @@ B.leerRespaldo = async file => {
   if (cab[0] === 0x50 && cab[1] === 0x4B) {
     const lista = await B.zip.leer(file);
     const ed = lista.find(x => x.nombre.toLowerCase() === 'datos.json');
-    if (!ed) throw new Error('El .zip no trae «datos.json»: no es un respaldo de Bluumxsic.');
+    if (!ed) throw new Error('El .zip no trae «datos.json»: no es un respaldo de SP-Control.');
     let r;
     try { r = JSON.parse((await (await ed.leer()).text()).replace(/^\uFEFF/, '')); } catch (e) { if (e.message && /contraseña|zip|navegador|compresión/.test(e.message)) throw e; throw new Error('«datos.json» está dañado o incompleto.'); }
     validarRespaldo(r);

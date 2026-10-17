@@ -1,5 +1,5 @@
 /* Respaldo protegido con contraseña.
-   Formato .bluumxsic (el mismo en la app de Windows):
+   Formato .spcontrol (antes .bluumxsic; es el mismo en la app de Windows):
      0-3  "BLXC"   4  versión (1)   5-20  sal (16)   21-24  vueltas PBKDF2 (uint32, big-endian)   25-36  nonce (12)
      37…  datos cifrados + etiqueta (16)  — AES-256-GCM; los primeros 37 bytes van como dato autenticado.
    Clave: PBKDF2-HMAC-SHA256 de la contraseña (UTF-8, normalizada NFC). Dentro va el .zip del respaldo. */
