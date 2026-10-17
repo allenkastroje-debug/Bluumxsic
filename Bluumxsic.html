@@ -224,7 +224,12 @@ button.fila { width:100%; text-align:left; color:inherit; }
 .leyenda { display:flex; justify-content:center; gap:16px; margin-top:8px; font-size:.75rem; color:var(--muted); }
 .leyenda span { display:inline-flex; align-items:center; gap:5px; }
 .cobros { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-.mov { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+.mov { display:flex; flex-direction:column; gap:8px; padding:10px 12px; }
+.mov-top { display:flex; align-items:center; gap:10px; min-width:0; }
+.mov-acc { display:flex; justify-content:flex-start; padding-right:64px; align-items:center; gap:8px; border-top:1px solid var(--line); padding-top:8px; }
+.mov-btn { min-height:36px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface2); color:var(--text); font-size:.85rem; }
+.mov-btn:active { transform:scale(.96); }
+.mov-btn.peligro { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 45%,var(--line)); }
 .mov-ic { width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:50%; font-weight:800; }
 .mov-ic.ing { background:color-mix(in srgb,var(--ok) 18%,transparent); color:var(--ok); }
 .mov-ic.gas { background:color-mix(in srgb,var(--danger) 18%,transparent); color:var(--danger); }
@@ -365,7 +370,7 @@ textarea { resize:vertical; }
 const B = window.B = {};
 
 /* Versión de la app: súbela aquí y en sw.js (VERSION) cada vez que publiques cambios. */
-B.VERSION = '1.8';
+B.VERSION = '1.9';
 B.MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 B.DIAS_CORTOS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 
@@ -630,7 +635,7 @@ B.pedirClave = ({ titulo, intro, nueva = false, validar = null }) => new Promise
       <p class="nota err" id="clave-err" hidden></p>
       ${nueva ? '<p class="nota"><b>Guárdala bien:</b> si la olvidas, nadie podrá abrir ese respaldo (ni yo ni la app).</p>' : ''}
       <div class="acciones fin">
-        ${nueva ? '<button type="button" class="btn fantasma" id="sin-clave">Sin contraseña</button>' : '<button type="button" class="btn fantasma" data-cerrar>Cancelar</button>'}
+        <button type="button" class="btn fantasma" data-cerrar>Cancelar</button>
         <button type="submit" class="btn" id="ok-clave">${nueva ? 'Guardar con contraseña' : 'Abrir'}</button>
       </div>
     </form>`, { alCerrar: () => { if (!hecho) { hecho = true; res(null); } } });
@@ -638,14 +643,13 @@ B.pedirClave = ({ titulo, intro, nueva = false, validar = null }) => new Promise
   const mostrarErr = t => { err.textContent = t; err.hidden = !t; };
   const cerrar = v => { if (hecho) return; hecho = true; res(v); h.cerrar(); };
   h.$('#ver-clave').addEventListener('change', ev => { f.c1.type = ev.target.checked ? 'text' : 'password'; if (f.c2) f.c2.type = f.c1.type; });
-  if (nueva) h.$('#sin-clave').onclick = () => cerrar('');
   setTimeout(() => f.c1.focus(), 250);
   f.addEventListener('submit', async ev => {
     ev.preventDefault();
     const c = f.c1.value;
     if (!c) { mostrarErr('Escribe la contraseña.'); return; }
     if (nueva) {
-      if (c.length < 4) { mostrarErr('Usa al menos 4 caracteres.'); return; }
+      if (c.length < 6) { mostrarErr('Usa al menos 6 caracteres.'); return; }
       if (c !== f.c2.value) { mostrarErr('Las dos contraseñas no coinciden.'); return; }
     }
     if (validar) {
@@ -1462,6 +1466,19 @@ B.restaurar = async r => {
   return n;
 };
 
+/* Borra una foto de comprobante: del teléfono, de la lista y de los movimientos que la usaban. */
+B.eliminarPrueba = async ruta => {
+  const usos = B.d.Movimientos.filter(m => m.Prueba === ruta).length;
+  if (!await B.confirmar('Eliminar comprobante',
+    `¿Eliminar la foto «${B.nombreArchivo(ruta)}»?\n\n${usos ? 'El movimiento que la usa se queda, solo sin foto.\n' : ''}Esto no se puede deshacer.`, { si: 'Eliminar', peligro: true })) return false;
+  await B.db.del('pruebas', ruta);
+  B.d.Pruebas = B.d.Pruebas.filter(r => r.Archivo !== ruta);
+  for (const m of B.d.Movimientos) if (m.Prueba === ruta) m.Prueba = null;
+  const u = B._urls.get(ruta); if (u) { try { URL.revokeObjectURL(u); } catch { } B._urls.delete(ruta); }
+  await B.guardar();
+  return true;
+};
+
 /* Imagen guardada → URL para mostrarla (se cachean mientras la app está abierta). */
 B._urls = new Map();
 B.urlPrueba = async ruta => {
@@ -1758,11 +1775,15 @@ function vMovs() {
 function movFila(m) {
   const ing = m.Tipo === 'Ingreso';
   return `<div class="card mov">
-    <span class="mov-ic ${ing ? 'ing' : 'gas'}">${ing ? '↑' : '↓'}</span>
-    <div class="mov-info"><b>${e(m.Descripcion)}</b><small>${e(B.fechaCorta(m.Fecha))} · ${e(B.equivMov(m))}</small></div>
-    <div class="mov-der"><b class="${ing ? 'ing' : 'gas'}">${e(B.montoMov(m))}</b></div>
-    ${m.Prueba ? `<button class="icono chico" data-act="ver-img" data-r="${e(m.Prueba)}" aria-label="Ver comprobante">🧾</button>` : ''}
-    <button class="icono chico" data-act="del-mov" data-id="${m.Id}" aria-label="Eliminar">✕</button>
+    <div class="mov-top">
+      <span class="mov-ic ${ing ? 'ing' : 'gas'}">${ing ? '↑' : '↓'}</span>
+      <div class="mov-info"><b>${e(m.Descripcion)}</b><small>${e(B.fechaCorta(m.Fecha))} · ${e(B.equivMov(m))}</small></div>
+      <div class="mov-der"><b class="${ing ? 'ing' : 'gas'}">${e(B.montoMov(m))}</b></div>
+    </div>
+    <div class="mov-acc">
+      ${m.Prueba ? `<button class="mov-btn" data-act="ver-img" data-r="${e(m.Prueba)}">🧾 Comprobante</button>` : '<span></span>'}
+      <button class="mov-btn peligro" data-act="del-mov" data-id="${m.Id}" aria-label="Eliminar movimiento">🗑 Eliminar</button>
+    </div>
   </div>`;
 }
 
@@ -1835,7 +1856,7 @@ function vMas() {
     <div class="acciones"><button class="btn" data-act="probar-toast">Probar mensaje</button><button class="btn fantasma" data-act="probar-dlg">Probar confirmación</button></div>`;
 
   const resp = `
-    <p class="nota">Un archivo .zip con tus datos y las fotos de comprobantes (o un .bluumxsic si lo proteges con contraseña al guardarlo). Es el mismo formato de la app de Windows: puedes pasar todo de un lado a otro. También se importan los respaldos antiguos .json.</p>
+    <p class="nota">Un archivo .bluumxsic con tus datos y las fotos de comprobantes, siempre protegido con la contraseña que elijas (si la olvidas no se puede recuperar). Es el mismo formato de la app de Windows. También se importan los respaldos antiguos .zip y .json.</p>
     <div class="acciones">
       ${navigator.canShare ? '<button class="btn" data-act="exp-compartir">📤 Guardar / compartir respaldo</button><button class="btn fantasma" data-act="exp-descargar">⬇ Descargar</button>'
         : '<button class="btn" data-act="exp-descargar">⬇ Descargar respaldo</button>'}
@@ -2122,6 +2143,11 @@ B.hojaAgregarCuenta = p => {
 B.hojaComprobantes = async (carpeta, nombre) => {
   let lista = B.d.Pruebas.filter(r => !carpeta || String(r.Archivo).startsWith(carpeta + '/'));
   if (carpeta === '' && nombre) lista = [];
+  if (!carpeta && !nombre) {   // «todos»: también las fotos sueltas que ya no tienen registro (p. ej. pruebas de versiones viejas)
+    const conocidas = new Set(B.d.Pruebas.map(r => r.Archivo));
+    for (const k of await B.db.keys('pruebas')) if (!conocidas.has(String(k))) lista.push({ Archivo: String(k), Titular: 'Sin registro', FechaPago: '' });
+  }
+  B._galeria = () => B.hojaComprobantes(carpeta, nombre);
   const grupos = new Map();
   [...lista].sort((a, b) => String(b.FechaPago).localeCompare(String(a.FechaPago)) || b.Archivo.localeCompare(a.Archivo))
     .forEach(r => { const k = r.Titular || 'Sin titular'; (grupos.get(k) || grupos.set(k, []).get(k)).push(r); });
@@ -2131,6 +2157,7 @@ B.hojaComprobantes = async (carpeta, nombre) => {
         <img alt="" data-src="${e(r.Archivo)}"><small>${e(B.nombreArchivo(r.Archivo))}</small></button>`).join('')}</div>`).join('')
     : vacio('🧾', 'Sin comprobantes', 'Cada pago que registres guarda aquí su foto, ordenada por titular y mes.');
   const h = B.sheet(nombre ? `Comprobantes · ${nombre}` : 'Comprobantes', html, { alta: true });
+  h.el.dataset.galeria = '1';
   h.el.addEventListener('click', ev => { const b = ev.target.closest('.miniatura'); if (b) B.verImagen(b.dataset.r); });
   for (const img of h.$$('img[data-src]')) {
     B.urlPrueba(img.dataset.src).then(u => { if (u) img.src = u; else img.closest('.miniatura').classList.add('perdida'); });
@@ -2145,8 +2172,15 @@ B.verImagen = async ruta => {
     <div class="acciones fin">
       ${navigator.canShare ? '<button class="btn fantasma" id="v-share">📤 Compartir</button>' : ''}
       <button class="btn fantasma" id="v-down">⬇ Descargar</button>
+      <button class="btn fantasma peligro-t" id="v-del">🗑 Eliminar</button>
       <button class="btn" data-cerrar>Cerrar</button></div>`, { alta: true });
   h.$('#v-down').onclick = () => B.descargar(blob, nombre);
+  h.$('#v-del').onclick = async () => {
+    if (!await B.eliminarPrueba(ruta)) return;
+    h.cerrar(); B.render(); B.toast('Comprobante eliminado', nombre, 'Info');
+    const g = B._hojas[B._hojas.length - 1];   // si venías de la galería, se actualiza
+    if (g && g.el.dataset.galeria && B._galeria) { g.cerrar(); setTimeout(B._galeria, 280); }
+  };
   const s = h.$('#v-share');
   if (s) s.onclick = async () => {
     try { await navigator.share({ files: [new File([blob], nombre, { type: blob.type || B.mimeDe(nombre) })], title: nombre }); }
@@ -2280,25 +2314,25 @@ const ACC = {
 };
 
 async function exportar(compartir) {
-  // contraseña opcional: '' = sin contraseña, null = canceló
+  // la contraseña es obligatoria: el respaldo siempre sale cifrado (.bluumxsic)
   const clave = await B.pedirClave({
     titulo: 'Proteger el respaldo', nueva: true,
-    intro: 'Si lo envías por WhatsApp o correo, ponle una contraseña para que solo tú puedas abrirlo. También puedes guardarlo sin contraseña.',
+    intro: 'El respaldo lleva tus clientes, pagos y comprobantes, así que siempre se guarda con contraseña.',
   });
-  if (clave === null) return;
-  const quitar = B.toast('Preparando respaldo…', clave ? 'Incluye tus datos y las fotos, cifrados con tu contraseña.' : 'Incluye tus datos y las fotos de comprobantes.', 'Info');
+  if (!clave) return;
+  const quitar = B.toast('Preparando respaldo…', 'Incluye tus datos y las fotos, cifrados con tu contraseña.', 'Info');
   try {
     let { blob, nombre, n } = await B.crearRespaldo();
-    if (clave) { blob = await B.cripto.cifrar(blob, clave); nombre = nombre.replace(/\.zip$/, '.bluumxsic'); }
+    blob = await B.cripto.cifrar(blob, clave);
+    nombre = nombre.replace(/\.zip$/, '.bluumxsic');
     quitar();
-    const tipo = clave ? 'application/octet-stream' : 'application/zip';
-    const file = new File([blob], nombre, { type: tipo });
+    const file = new File([blob], nombre, { type: 'application/octet-stream' });
     if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas${clave ? ' · con contraseña' : ''}.`, 'Exito'); return; }
+      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas · con contraseña.`, 'Exito'); return; }
       catch (err) { if (err.name === 'AbortError') return; }
     }
     B.descargar(blob, nombre);
-    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba${clave ? ', protegidos con contraseña' : ''}.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).${clave ? '\nNo olvides la contraseña: sin ella no se puede abrir.' : ''}`, 'Respaldo guardado', 'Exito');
+    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba, protegidos con contraseña.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).\nNo olvides la contraseña: sin ella no se puede abrir.`, 'Respaldo guardado', 'Exito');
   } catch (err) { quitar(); B.error('No se pudo crear el respaldo: ' + (err.message || err)); }
 }
 

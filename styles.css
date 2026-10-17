@@ -209,7 +209,12 @@ button.fila { width:100%; text-align:left; color:inherit; }
 .leyenda { display:flex; justify-content:center; gap:16px; margin-top:8px; font-size:.75rem; color:var(--muted); }
 .leyenda span { display:inline-flex; align-items:center; gap:5px; }
 .cobros { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-.mov { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+.mov { display:flex; flex-direction:column; gap:8px; padding:10px 12px; }
+.mov-top { display:flex; align-items:center; gap:10px; min-width:0; }
+.mov-acc { display:flex; justify-content:flex-start; padding-right:64px; align-items:center; gap:8px; border-top:1px solid var(--line); padding-top:8px; }
+.mov-btn { min-height:36px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface2); color:var(--text); font-size:.85rem; }
+.mov-btn:active { transform:scale(.96); }
+.mov-btn.peligro { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 45%,var(--line)); }
 .mov-ic { width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:50%; font-weight:800; }
 .mov-ic.ing { background:color-mix(in srgb,var(--ok) 18%,transparent); color:var(--ok); }
 .mov-ic.gas { background:color-mix(in srgb,var(--danger) 18%,transparent); color:var(--danger); }

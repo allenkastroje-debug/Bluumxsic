@@ -226,6 +226,11 @@ B.hojaAgregarCuenta = p => {
 B.hojaComprobantes = async (carpeta, nombre) => {
   let lista = B.d.Pruebas.filter(r => !carpeta || String(r.Archivo).startsWith(carpeta + '/'));
   if (carpeta === '' && nombre) lista = [];
+  if (!carpeta && !nombre) {   // «todos»: también las fotos sueltas que ya no tienen registro (p. ej. pruebas de versiones viejas)
+    const conocidas = new Set(B.d.Pruebas.map(r => r.Archivo));
+    for (const k of await B.db.keys('pruebas')) if (!conocidas.has(String(k))) lista.push({ Archivo: String(k), Titular: 'Sin registro', FechaPago: '' });
+  }
+  B._galeria = () => B.hojaComprobantes(carpeta, nombre);
   const grupos = new Map();
   [...lista].sort((a, b) => String(b.FechaPago).localeCompare(String(a.FechaPago)) || b.Archivo.localeCompare(a.Archivo))
     .forEach(r => { const k = r.Titular || 'Sin titular'; (grupos.get(k) || grupos.set(k, []).get(k)).push(r); });
@@ -235,6 +240,7 @@ B.hojaComprobantes = async (carpeta, nombre) => {
         <img alt="" data-src="${e(r.Archivo)}"><small>${e(B.nombreArchivo(r.Archivo))}</small></button>`).join('')}</div>`).join('')
     : vacio('🧾', 'Sin comprobantes', 'Cada pago que registres guarda aquí su foto, ordenada por titular y mes.');
   const h = B.sheet(nombre ? `Comprobantes · ${nombre}` : 'Comprobantes', html, { alta: true });
+  h.el.dataset.galeria = '1';
   h.el.addEventListener('click', ev => { const b = ev.target.closest('.miniatura'); if (b) B.verImagen(b.dataset.r); });
   for (const img of h.$$('img[data-src]')) {
     B.urlPrueba(img.dataset.src).then(u => { if (u) img.src = u; else img.closest('.miniatura').classList.add('perdida'); });
@@ -249,8 +255,15 @@ B.verImagen = async ruta => {
     <div class="acciones fin">
       ${navigator.canShare ? '<button class="btn fantasma" id="v-share">📤 Compartir</button>' : ''}
       <button class="btn fantasma" id="v-down">⬇ Descargar</button>
+      <button class="btn fantasma peligro-t" id="v-del">🗑 Eliminar</button>
       <button class="btn" data-cerrar>Cerrar</button></div>`, { alta: true });
   h.$('#v-down').onclick = () => B.descargar(blob, nombre);
+  h.$('#v-del').onclick = async () => {
+    if (!await B.eliminarPrueba(ruta)) return;
+    h.cerrar(); B.render(); B.toast('Comprobante eliminado', nombre, 'Info');
+    const g = B._hojas[B._hojas.length - 1];   // si venías de la galería, se actualiza
+    if (g && g.el.dataset.galeria && B._galeria) { g.cerrar(); setTimeout(B._galeria, 280); }
+  };
   const s = h.$('#v-share');
   if (s) s.onclick = async () => {
     try { await navigator.share({ files: [new File([blob], nombre, { type: blob.type || B.mimeDe(nombre) })], title: nombre }); }
@@ -384,25 +397,25 @@ const ACC = {
 };
 
 async function exportar(compartir) {
-  // contraseña opcional: '' = sin contraseña, null = canceló
+  // la contraseña es obligatoria: el respaldo siempre sale cifrado (.bluumxsic)
   const clave = await B.pedirClave({
     titulo: 'Proteger el respaldo', nueva: true,
-    intro: 'Si lo envías por WhatsApp o correo, ponle una contraseña para que solo tú puedas abrirlo. También puedes guardarlo sin contraseña.',
+    intro: 'El respaldo lleva tus clientes, pagos y comprobantes, así que siempre se guarda con contraseña.',
   });
-  if (clave === null) return;
-  const quitar = B.toast('Preparando respaldo…', clave ? 'Incluye tus datos y las fotos, cifrados con tu contraseña.' : 'Incluye tus datos y las fotos de comprobantes.', 'Info');
+  if (!clave) return;
+  const quitar = B.toast('Preparando respaldo…', 'Incluye tus datos y las fotos, cifrados con tu contraseña.', 'Info');
   try {
     let { blob, nombre, n } = await B.crearRespaldo();
-    if (clave) { blob = await B.cripto.cifrar(blob, clave); nombre = nombre.replace(/\.zip$/, '.bluumxsic'); }
+    blob = await B.cripto.cifrar(blob, clave);
+    nombre = nombre.replace(/\.zip$/, '.bluumxsic');
     quitar();
-    const tipo = clave ? 'application/octet-stream' : 'application/zip';
-    const file = new File([blob], nombre, { type: tipo });
+    const file = new File([blob], nombre, { type: 'application/octet-stream' });
     if (compartir && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas${clave ? ' · con contraseña' : ''}.`, 'Exito'); return; }
+      try { await navigator.share({ files: [file], title: 'Respaldo Bluumxsic' }); B.toast('Respaldo listo', `${n} imagen(es) de prueba incluidas · con contraseña.`, 'Exito'); return; }
       catch (err) { if (err.name === 'AbortError') return; }
     }
     B.descargar(blob, nombre);
-    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba${clave ? ', protegidos con contraseña' : ''}.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).${clave ? '\nNo olvides la contraseña: sin ella no se puede abrir.' : ''}`, 'Respaldo guardado', 'Exito');
+    B.info(`Se guardaron tus datos y ${n} imagen(es) de prueba, protegidos con contraseña.\n\n${nombre}\n\nGuárdalo en un lugar seguro (nube o USB).\nNo olvides la contraseña: sin ella no se puede abrir.`, 'Respaldo guardado', 'Exito');
   } catch (err) { quitar(); B.error('No se pudo crear el respaldo: ' + (err.message || err)); }
 }
 

@@ -70,3 +70,8 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - Al elegir un respaldo aparece una pantalla con ruedita: «Archivo recibido» (con nombre y tamaño), «Leyendo el respaldo…» y «Importando…».
 - Si el teléfono no entrega ningún archivo, ahora lo avisa en vez de quedarse callado.
 - Si no ves ni «Archivo recibido», el teléfono no está pasando el archivo a la app: prueba elegirlo desde «Descargas»/«Archivos» y no desde la galería.
+
+## Versión 1.9 — Movimientos, comprobantes y respaldo obligatorio con contraseña
+- **Movimientos rediseñados:** cada movimiento tiene ahora una fila de botones propia («Comprobante» y «Eliminar») con espacio libre a la derecha, para que el botón ＋ flotante ya no choque con ellos.
+- **Eliminar comprobantes:** al abrir una foto aparece «Eliminar». En «Ver todos los comprobantes» también salen las fotos sueltas sin registro (por ejemplo, pruebas de versiones viejas) para poder borrarlas. El movimiento que usaba la foto se queda, solo sin imagen.
+- **Respaldo siempre con contraseña:** ya no existe «Sin contraseña» (mínimo 6 caracteres). Los respaldos antiguos .zip y .json se siguen importando.

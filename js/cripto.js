@@ -62,7 +62,7 @@ B.pedirClave = ({ titulo, intro, nueva = false, validar = null }) => new Promise
       <p class="nota err" id="clave-err" hidden></p>
       ${nueva ? '<p class="nota"><b>Guárdala bien:</b> si la olvidas, nadie podrá abrir ese respaldo (ni yo ni la app).</p>' : ''}
       <div class="acciones fin">
-        ${nueva ? '<button type="button" class="btn fantasma" id="sin-clave">Sin contraseña</button>' : '<button type="button" class="btn fantasma" data-cerrar>Cancelar</button>'}
+        <button type="button" class="btn fantasma" data-cerrar>Cancelar</button>
         <button type="submit" class="btn" id="ok-clave">${nueva ? 'Guardar con contraseña' : 'Abrir'}</button>
       </div>
     </form>`, { alCerrar: () => { if (!hecho) { hecho = true; res(null); } } });
@@ -70,14 +70,13 @@ B.pedirClave = ({ titulo, intro, nueva = false, validar = null }) => new Promise
   const mostrarErr = t => { err.textContent = t; err.hidden = !t; };
   const cerrar = v => { if (hecho) return; hecho = true; res(v); h.cerrar(); };
   h.$('#ver-clave').addEventListener('change', ev => { f.c1.type = ev.target.checked ? 'text' : 'password'; if (f.c2) f.c2.type = f.c1.type; });
-  if (nueva) h.$('#sin-clave').onclick = () => cerrar('');
   setTimeout(() => f.c1.focus(), 250);
   f.addEventListener('submit', async ev => {
     ev.preventDefault();
     const c = f.c1.value;
     if (!c) { mostrarErr('Escribe la contraseña.'); return; }
     if (nueva) {
-      if (c.length < 4) { mostrarErr('Usa al menos 4 caracteres.'); return; }
+      if (c.length < 6) { mostrarErr('Usa al menos 6 caracteres.'); return; }
       if (c !== f.c2.value) { mostrarErr('Las dos contraseñas no coinciden.'); return; }
     }
     if (validar) {

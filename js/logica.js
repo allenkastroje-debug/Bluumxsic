@@ -539,6 +539,19 @@ B.restaurar = async r => {
   return n;
 };
 
+/* Borra una foto de comprobante: del teléfono, de la lista y de los movimientos que la usaban. */
+B.eliminarPrueba = async ruta => {
+  const usos = B.d.Movimientos.filter(m => m.Prueba === ruta).length;
+  if (!await B.confirmar('Eliminar comprobante',
+    `¿Eliminar la foto «${B.nombreArchivo(ruta)}»?\n\n${usos ? 'El movimiento que la usa se queda, solo sin foto.\n' : ''}Esto no se puede deshacer.`, { si: 'Eliminar', peligro: true })) return false;
+  await B.db.del('pruebas', ruta);
+  B.d.Pruebas = B.d.Pruebas.filter(r => r.Archivo !== ruta);
+  for (const m of B.d.Movimientos) if (m.Prueba === ruta) m.Prueba = null;
+  const u = B._urls.get(ruta); if (u) { try { URL.revokeObjectURL(u); } catch { } B._urls.delete(ruta); }
+  await B.guardar();
+  return true;
+};
+
 /* Imagen guardada → URL para mostrarla (se cachean mientras la app está abierta). */
 B._urls = new Map();
 B.urlPrueba = async ruta => {

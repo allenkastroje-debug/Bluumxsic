@@ -267,11 +267,15 @@ function vMovs() {
 function movFila(m) {
   const ing = m.Tipo === 'Ingreso';
   return `<div class="card mov">
-    <span class="mov-ic ${ing ? 'ing' : 'gas'}">${ing ? '↑' : '↓'}</span>
-    <div class="mov-info"><b>${e(m.Descripcion)}</b><small>${e(B.fechaCorta(m.Fecha))} · ${e(B.equivMov(m))}</small></div>
-    <div class="mov-der"><b class="${ing ? 'ing' : 'gas'}">${e(B.montoMov(m))}</b></div>
-    ${m.Prueba ? `<button class="icono chico" data-act="ver-img" data-r="${e(m.Prueba)}" aria-label="Ver comprobante">🧾</button>` : ''}
-    <button class="icono chico" data-act="del-mov" data-id="${m.Id}" aria-label="Eliminar">✕</button>
+    <div class="mov-top">
+      <span class="mov-ic ${ing ? 'ing' : 'gas'}">${ing ? '↑' : '↓'}</span>
+      <div class="mov-info"><b>${e(m.Descripcion)}</b><small>${e(B.fechaCorta(m.Fecha))} · ${e(B.equivMov(m))}</small></div>
+      <div class="mov-der"><b class="${ing ? 'ing' : 'gas'}">${e(B.montoMov(m))}</b></div>
+    </div>
+    <div class="mov-acc">
+      ${m.Prueba ? `<button class="mov-btn" data-act="ver-img" data-r="${e(m.Prueba)}">🧾 Comprobante</button>` : '<span></span>'}
+      <button class="mov-btn peligro" data-act="del-mov" data-id="${m.Id}" aria-label="Eliminar movimiento">🗑 Eliminar</button>
+    </div>
   </div>`;
 }
 
@@ -344,7 +348,7 @@ function vMas() {
     <div class="acciones"><button class="btn" data-act="probar-toast">Probar mensaje</button><button class="btn fantasma" data-act="probar-dlg">Probar confirmación</button></div>`;
 
   const resp = `
-    <p class="nota">Un archivo .zip con tus datos y las fotos de comprobantes (o un .bluumxsic si lo proteges con contraseña al guardarlo). Es el mismo formato de la app de Windows: puedes pasar todo de un lado a otro. También se importan los respaldos antiguos .json.</p>
+    <p class="nota">Un archivo .bluumxsic con tus datos y las fotos de comprobantes, siempre protegido con la contraseña que elijas (si la olvidas no se puede recuperar). Es el mismo formato de la app de Windows. También se importan los respaldos antiguos .zip y .json.</p>
     <div class="acciones">
       ${navigator.canShare ? '<button class="btn" data-act="exp-compartir">📤 Guardar / compartir respaldo</button><button class="btn fantasma" data-act="exp-descargar">⬇ Descargar</button>'
         : '<button class="btn" data-act="exp-descargar">⬇ Descargar respaldo</button>'}
