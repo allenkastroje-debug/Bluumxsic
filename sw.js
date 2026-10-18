@@ -1,8 +1,8 @@
 /* Service worker: deja la app disponible sin internet y revisa los pagos cuando el sistema lo permite. */
-const VERSION = 'spcontrol-v2.2';
+const VERSION = 'spcontrol-v2.3';
 const ARCHIVOS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
-  'js/util.js', 'js/db.js', 'js/zip.js', 'js/cripto.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/vistas.js', 'js/main.js',
+  'js/util.js', 'js/db.js', 'js/zip.js', 'js/cripto.js', 'js/tema.js', 'js/ui.js', 'js/logica.js', 'js/seguridad.js', 'js/vistas.js', 'js/main.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/logo-mask.png', 'icons/apple-touch-icon.png',
   'icons/logo-x-tl.png', 'icons/logo-x-tr.png', 'icons/logo-x-bl.png', 'icons/logo-x-br.png', 'icons/logo-espada.png', 'icons/logo-ala-i.png', 'icons/logo-ala-d.png',
 ];
@@ -34,18 +34,18 @@ self.addEventListener('fetch', ev => {
 });
 
 /* ───── Revisión de pagos en segundo plano (solo Android con la app instalada; el sistema decide cuándo) ───── */
-function leerDatos() {
-  return leerDatosDe('spcontrol').then(d => d || leerDatosDe('bluumxsic'));   // la segunda es la base de versiones anteriores
+function leerDatos() {   // primero el resumen en claro («aviso»), luego los datos (si no están cifrados) y por último la base de versiones anteriores
+  return leerDatosDe('spcontrol', 'aviso').then(d => d || leerDatosDe('spcontrol', 'datos')).then(d => d || leerDatosDe('bluumxsic', 'datos'));
 }
-function leerDatosDe(nombre) {
+function leerDatosDe(nombre, clave) {
   return new Promise(ok => {
     const r = indexedDB.open(nombre, 1);
     r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('pruebas'); };
     r.onerror = () => ok(null);
     r.onsuccess = () => {
       try {
-        const q = r.result.transaction('kv').objectStore('kv').get('datos');
-        q.onsuccess = () => ok(q.result || null);
+        const q = r.result.transaction('kv').objectStore('kv').get(clave);
+        q.onsuccess = () => ok(q.result && !q.result.__c ? q.result : null);
         q.onerror = () => ok(null);
       } catch { ok(null); }
     };

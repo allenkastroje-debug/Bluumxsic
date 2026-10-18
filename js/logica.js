@@ -65,7 +65,12 @@ B.cargar = async () => {
   B.aj.nombre = B.AJ_DEF.nombre; B.aj.sub = B.AJ_DEF.sub; B.aj.logo = true;   // nombre fijo: ya no se edita desde Ajustes
 };
 
-B.guardar = () => B.db.set('kv', 'datos', B.d).catch(() =>
+/* Resumen sin nombres (solo fechas) para que el aviso en segundo plano funcione aunque los datos estén cifrados. */
+B.resumenAviso = () => ({
+  Clientes: B.d.Clientes.map(c => ({ ProximoPago: c.ProximoPago })), Planes: B.d.Planes.map(p => ({ ProximoPago: p.ProximoPago })),
+  AvisosActivos: B.d.AvisosActivos, AvisoHora: B.d.AvisoHora, DiasCerca: B.d.DiasCerca, UltimoAviso: B.d.UltimoAviso,
+});
+B.guardar = () => B.db.set('kv', 'datos', B.d).then(() => B.db.set('kv', 'aviso', B.resumenAviso())).catch(() =>
   B.error('No se pudieron guardar los datos en este teléfono. Revisa el espacio disponible o que el navegador no esté en modo privado.'));
 B.guardarAj = () => B.db.set('kv', 'ajustes', B.aj).catch(() => { });
 

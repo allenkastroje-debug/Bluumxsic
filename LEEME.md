@@ -92,3 +92,13 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 ## Versión 2.2 — Pantalla de inicio por capas
 - El logo se arma en tres tiempos: primero los cuatro brazos de la X llegan desde las esquinas hacia el centro, luego la espada cae desde arriba y, al golpear (con un destello), las alas salen disparadas en diagonal. Después aparecen el nombre y el subtítulo. Dura unos 3,5 segundos.
 - Para esto se agregaron siete imágenes en `icons/` (`logo-x-tl`, `logo-x-tr`, `logo-x-bl`, `logo-x-br`, `logo-espada`, `logo-ala-i`, `logo-ala-d`): son el mismo logo separado por piezas. Si subes la carpeta a GitHub, sube también esos archivos.
+
+## Versión 2.3 — Seguridad (PIN y cifrado)
+- **Más → Seguridad → Activar bloqueo con PIN** (6 a 8 números). Al abrir la app se pide el PIN y no se carga nada hasta escribirlo.
+- Tus datos y fotos se **cifran dentro del teléfono** (AES-256-GCM). La clave se protege con tu PIN (PBKDF2, 210 000 vueltas).
+- **Bloqueo automático** al volver a la app tras 0, 1, 5 o 15 minutos; botón «Bloquear ahora».
+- **Intentos limitados**: tras 5 fallos esperas 30 s, luego 5 min y 30 min.
+- **Huella / rostro** opcional (solo si el teléfono lo permite). Es un atajo: el PIN sigue siendo la llave.
+- Los avisos de pago siguen funcionando: se guarda aparte un resumen solo con fechas (sin nombres).
+- **Olvidé mi PIN**: la única salida es borrar lo del teléfono e importar tu respaldo (.spcontrol).
+- Límites: los nombres de los archivos de fotos no se cifran; un PIN corto es más fácil de adivinar si alguien copia los datos; sin PIN ni respaldo no hay recuperación.

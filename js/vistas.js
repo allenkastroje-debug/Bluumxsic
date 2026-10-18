@@ -349,6 +349,22 @@ function vMas() {
     <p class="nota" id="almacen-estado">Calculando almacenamiento…</p>
     <div class="acciones"><button class="btn fantasma peligro-t" data-act="reset-aj">Restablecer ajustes de la app</button></div>`;
 
+  const sg = B.seg, sgOn = sg.activo;
+  const seguridad = sgOn ? `
+    <p class="nota">🔒 Bloqueo activo: tus datos y fotos están cifrados en este teléfono y se pide el PIN al abrir la app.</p>
+    <h3>Bloquear al volver a la app tras</h3>
+    <div class="fila-chips envolver">${[[0, 'Siempre'], [1, '1 min'], [5, '5 min'], [15, '15 min']].map(([v, t]) =>
+      `<button class="chipbtn ${sg.meta.minutos === v ? 'act' : ''}" data-act="seg-min" data-v="${v}">${t}</button>`).join('')}</div>
+    <div class="acciones">
+      <button class="btn" data-act="seg-bloquear">🔒 Bloquear ahora</button>
+      <button class="btn fantasma" data-act="seg-cambiar">Cambiar PIN</button>
+      ${sg.bioPosible ? `<button class="btn fantasma" data-act="seg-bio">${sg.bioActiva ? '☝ Quitar huella / rostro' : '☝ Usar huella / rostro'}</button>` : ''}
+      <button class="btn fantasma peligro-t" data-act="seg-desactivar">Quitar el bloqueo</button>
+    </div>
+    <p class="nota">Límites: los nombres de los archivos de fotos no se cifran, y un PIN corto se puede adivinar si alguien copia los datos del teléfono. Si olvidas el PIN solo se recupera con tu respaldo (.spcontrol).</p>` : `
+    <p class="nota">Pon un PIN de 6 a 8 números para abrir la app. Tus datos y fotos se cifran en el teléfono con ese PIN. Haz un respaldo antes de activarlo.</p>
+    <div class="acciones"><button class="btn" data-act="seg-activar">🔒 Activar bloqueo con PIN</button></div>`;
+
   const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent), instalada = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const instalar = instalada ? '<p class="nota">✔ La app ya está instalada en este teléfono.</p>' : `
     ${B.ui.instalar ? '<div class="acciones"><button class="btn" data-act="instalar">📲 Instalar en este teléfono</button></div>' : ''}
@@ -362,6 +378,7 @@ function vMas() {
     ${sec('distrib', '📐', 'Distribución', distrib)}
     ${sec('avisos', '🔔', 'Avisos de pago', avisos)}
     ${sec('msgs', '💬', 'Mensajes emergentes', msgs)}
+    ${sec('seg', '🔒', 'Seguridad', seguridad)}
     ${sec('resp', '💾', 'Respaldo y comprobantes', resp)}
     ${sec('inst', '📲', 'Instalar la app', instalar)}
     <p class="pie">SP-Control · Allen.Inc (Ai) (móvil) · tus datos viven solo en este teléfono.<br>

@@ -39,9 +39,13 @@ B.db = (() => {
       t.onerror = t.onabort = () => mal(t.error || new Error('Error de almacenamiento'));
     });
   };
+  /* Gancho para el cifrado en reposo (lo instala js/seguridad.js): env cifra antes de guardar, des descifra al leer. */
+  const hook = { env: async (a, k, v) => v, des: async (a, k, r) => r };
   return {
-    get: (a, k) => tx(a, 'readonly', o => o.get(k)),
-    set: (a, k, v) => tx(a, 'readwrite', o => o.put(v, k)),
+    hook,
+    cerrar: async () => { if (abierta) { try { (await abierta).close(); } catch { } abierta = null; } },
+    get: async (a, k) => hook.des(a, k, await tx(a, 'readonly', o => o.get(k))),
+    set: async (a, k, v) => { const w = await hook.env(a, k, v); return tx(a, 'readwrite', o => o.put(w, k)); },
     del: (a, k) => tx(a, 'readwrite', o => o.delete(k)),
     keys: a => tx(a, 'readonly', o => o.getAllKeys()),
     clear: a => tx(a, 'readwrite', o => o.clear()),

@@ -286,6 +286,7 @@ const AJ = {
 const aplicarAj = () => { B.guardarAj(); B.aplicarTema(); B.render(); };
 
 const ACC = {
+  ...B.segAcc,
   ir: el => B.irA(el.dataset.p),
   tasa: () => B.hojaTasa(),
   'mes-ant': () => { B.ui.mes = new Date(B.ui.mes.getFullYear(), B.ui.mes.getMonth() - 1, 1); B.render(); },
@@ -486,6 +487,8 @@ B.quitarSplash = () => {
 
 /* ───────────── Arranque ───────────── */
 (async function iniciar() {
+  B.seg.preparar();
+  await B.seg.iniciar();          // si hay PIN, espera a que lo escribas antes de leer nada
   await B.cargar();
   B.aplicarTema();
   B.render();

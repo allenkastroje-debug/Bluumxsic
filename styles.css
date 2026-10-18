@@ -373,3 +373,23 @@ textarea { resize:vertical; }
   .sp-x, .sp-espada, .sp-ala { opacity:1; clip-path:none; } .sp-onda { display:none; }
   .sp-nombre, .sp-sub, .sp-barra { opacity:1; transform:none; } .sp-barra b { transform:none; }
 }
+
+/* ───── Bloqueo con PIN ───── */
+.bloqueo { position:fixed; inset:0; z-index:65; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; animation:aparece .15s both; overflow:auto; }
+.bloqueo.sale { opacity:0; transition:opacity .3s; pointer-events:none; }
+.bl-caja { width:100%; max-width:320px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; }
+.bl-logo { width:64px; height:64px; }
+.bl-tit { font-size:1.2rem; }
+#bl-msg { min-height:1.3em; color:var(--muted,inherit); opacity:.8; }
+.bl-puntos { display:flex; gap:12px; margin:6px 0 10px; }
+.bl-puntos i { width:14px; height:14px; border-radius:50%; border:2px solid var(--logo); transition:background .12s, transform .12s; }
+.bl-puntos i.on { background:var(--logo); transform:scale(1.1); }
+.bl-teclado { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; }
+.bl-tecla { height:62px; border-radius:50%; width:62px; justify-self:center; border:1px solid rgb(128 128 128 / .3); background:rgb(128 128 128 / .12); color:inherit; font:inherit; font-size:1.5rem; cursor:pointer; }
+.bl-tecla:active:not(:disabled) { background:var(--logo); color:#000; }
+.bl-tecla:disabled { opacity:.4; }
+.bl-aux { font-size:1.3rem; background:transparent; border-color:transparent; }
+.bl-olvide { margin-top:8px; }
+.tiembla { animation:tiembla .35s; }
+@keyframes tiembla { 20%,60% { transform:translateX(-9px); } 40%,80% { transform:translateX(9px); } }
+@media (prefers-reduced-motion:reduce) { .tiembla { animation:none; } }
