@@ -102,3 +102,6 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 - Los avisos de pago siguen funcionando: se guarda aparte un resumen solo con fechas (sin nombres).
 - **Olvidé mi PIN**: la única salida es borrar lo del teléfono e importar tu respaldo (.spcontrol).
 - Límites: los nombres de los archivos de fotos no se cifran; un PIN corto es más fácil de adivinar si alguien copia los datos; sin PIN ni respaldo no hay recuperación.
+
+## Versión 2.3.1
+- Corrección: al salir de la app para buscar la foto del comprobante (cámara, galería o archivos) y volver, ya no se bloquea ni se cierra el pago a medias. El bloqueo automático sigue funcionando si dejas la app sin usar.

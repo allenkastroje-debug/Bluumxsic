@@ -385,7 +385,7 @@ const ACC = {
 
   'exp-compartir': () => exportar(true),
   'exp-descargar': () => exportar(false),
-  importar: () => { B.toast('Elige tu respaldo', 'Busca el archivo .spcontrol (o un .bluumxsic, .zip o .json antiguo) en tu teléfono.', 'Info'); $('#archivo-respaldo').click(); },
+  importar: () => { B.seg.pausar(); B.toast('Elige tu respaldo', 'Busca el archivo .spcontrol (o un .bluumxsic, .zip o .json antiguo) en tu teléfono.', 'Info'); $('#archivo-respaldo').click(); },
   'reset-aj': async () => {
     if (!await B.confirmar('Restablecer ajustes', 'Vuelven el tema, el nombre, el logo, la letra, el tamaño y la distribución a como venían de fábrica.\nTus clientes, pagos y comprobantes no cambian.', { si: 'Restablecer', peligro: true })) return;
     B.aj = Object.assign({}, B.AJ_DEF); aplicarAj(); B.toast('Ajustes restablecidos', '', 'Info');

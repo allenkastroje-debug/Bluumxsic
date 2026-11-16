@@ -162,7 +162,7 @@ B.seg = (() => {
 
     bloquear() {
       if (!api.activo || !S.cifrando || document.getElementById('bloqueo')) return S.promesa;
-      for (const h of [...B._hojas]) { try { h.cerrar(); } catch { } }
+      // las hojas abiertas (por ejemplo un pago a medias) se dejan: la pantalla de bloqueo las tapa
       return mostrarBloqueo();
     },
   };
@@ -243,10 +243,22 @@ B.seg = (() => {
     location.reload();
   }
 
-  /* Bloqueo automático al volver a la app */
-  let oculto = 0;
+  /* Bloqueo automático al volver a la app.
+     Si te fuiste a buscar una foto/captura (o a compartir un respaldo) no se bloquea al volver: es la misma sesión. */
+  let oculto = 0, pausa = 0;
+  api.pausar = () => { pausa = Date.now() + 10 * 60000; };
+  const cualquierArchivo = ev => {
+    const t = ev.target && ev.target.closest ? ev.target : null;
+    if (!t) return;
+    const i = t.matches('input[type=file]') ? t : (t.closest('label') && t.closest('label').querySelector('input[type=file]'));
+    if (i) api.pausar();
+  };
+  document.addEventListener('click', cualquierArchivo, true);
+  if (navigator.share) { const f = navigator.share.bind(navigator); navigator.share = (...a) => { api.pausar(); return f(...a); }; }
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { oculto = Date.now(); return; }
+    const enPausa = pausa > Date.now(); pausa = 0;
+    if (enPausa) return;
     if (api.activo && S.cifrando && oculto && !document.getElementById('bloqueo') && Date.now() - oculto >= (S.meta.minutos || 0) * 60000) api.bloquear();
   });
 
