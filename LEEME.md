@@ -105,3 +105,6 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 
 ## Versión 2.3.1
 - Corrección: al salir de la app para buscar la foto del comprobante (cámara, galería o archivos) y volver, ya no se bloquea ni se cierra el pago a medias. El bloqueo automático sigue funcionando si dejas la app sin usar.
+
+## Versión 2.4 — Iconos nuevos
+- Todos los emojis se cambiaron por un juego de iconos propio (trazo redondeado y relleno suave) que toma el color del tema. Están en js/iconos.js.

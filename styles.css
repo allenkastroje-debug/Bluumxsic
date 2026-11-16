@@ -393,3 +393,8 @@ textarea { resize:vertical; }
 .tiembla { animation:tiembla .35s; }
 @keyframes tiembla { 20%,60% { transform:translateX(-9px); } 40%,80% { transform:translateX(9px); } }
 @media (prefers-reduced-motion:reduce) { .tiembla { animation:none; } }
+
+/* ───── Iconos propios ───── */
+.ic { display:inline-flex; vertical-align:-.22em; line-height:1; }
+.ico { width:1.2em; height:1.2em; flex:none; overflow:visible; }
+.btn .ic, .chipbtn .ic, .mov-btn .ic { margin-right:.1em; }
