@@ -108,3 +108,6 @@ Con Python instalado: abre una terminal en esta carpeta y ejecuta `python -m htt
 
 ## Versión 2.4 — Iconos nuevos
 - Todos los emojis se cambiaron por un juego de iconos propio (trazo redondeado y relleno suave) que toma el color del tema. Están en js/iconos.js.
+
+## Versión 2.5 — Pagos de varios meses y cuentas
+- Al registrar un pago eliges cuántos meses paga el cliente y, si tiene fechas por cuenta, qué cuentas paga y cuántos meses cada una. Una sola foto sirve para todo; cada mes de cada cuenta queda como su propio movimiento.

@@ -138,11 +138,12 @@ B.hojaMovimiento = () => {
 };
 
 /* Registrar un pago: la foto del comprobante es obligatoria. */
-B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito }) => {
+B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito, extra = null }) => {
   if (!(B.d.Tasa > 0)) { B.aviso('Primero define o actualiza la tasa BCV (arriba).'); return; }
   let archivo = null, url = null;
   const h = B.sheet(titulo, `
     <p class="nota">${intro}</p>
+    ${extra ? extra.html : ''}
     <div class="prueba" id="pr-caja"><div class="prueba-vacia"><span>🧾</span><b>Comprobante de pago obligatorio</b><small>Toma una foto o elige la captura del pago.</small></div></div>
     <p class="nota" id="pr-nombre"></p>
     <div class="acciones">
@@ -151,6 +152,14 @@ B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito }) => {
     </div>
     <div class="acciones fin"><button class="btn fantasma" data-cerrar>Cancelar</button><button class="btn" id="pr-ok" disabled>✔ Registrar pago</button></div>`,
     { alCerrar: () => { if (url) URL.revokeObjectURL(url); } });
+  const per = () => typeof periodo === 'function' ? periodo() : periodo;
+  const listo = () => { h.$('#pr-ok').disabled = !(archivo && (!extra || extra.valido())); };
+  const nombre = () => {
+    if (!archivo) return;
+    const ext = (archivo.size > 1.6e6 || !B.extension(archivo)) ? '.jpg' : B.extension(archivo);
+    h.$('#pr-nombre').innerHTML = `Se guardará como «<b>${e(B.nombrePrueba(per(), ext, new Set()))}</b>» en la carpeta del titular.`;
+  };
+  if (extra) extra.montar(h, () => { nombre(); listo(); });
   const poner = f => {
     if (!f) return;
     if (!B.esImagen(f)) { B.aviso('El archivo debe ser una imagen (png, jpg, webp, bmp o gif).'); return; }
@@ -158,14 +167,13 @@ B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito }) => {
     if (url) URL.revokeObjectURL(url);
     url = URL.createObjectURL(f);
     h.$('#pr-caja').innerHTML = `<img src="${url}" alt="Vista previa del comprobante">`;
-    const ext = (f.size > 1.6e6 || !B.extension(f)) ? '.jpg' : B.extension(f);
-    h.$('#pr-nombre').innerHTML = `Se guardará como «<b>${e(B.nombrePrueba(periodo, ext, new Set()))}</b>» en la carpeta del titular.`;
-    h.$('#pr-ok').disabled = false;
+    nombre(); listo();
   };
   h.$('#pr-cam').onchange = ev => poner(ev.target.files[0]);
   h.$('#pr-gal').onchange = ev => poner(ev.target.files[0]);
   h.$('#pr-ok').onclick = async ev => {
     if (!archivo) { B.aviso('No se registró el pago: la imagen de la prueba es obligatoria.'); return; }
+    if (extra && !extra.valido()) { B.aviso('Elige al menos una cuenta para registrar el pago.'); return; }
     const b = ev.currentTarget; b.disabled = true; b.textContent = 'Guardando…';
     try {
       const reg = await ejecutar(archivo);
@@ -178,18 +186,69 @@ B.hojaPago = ({ titulo, intro, periodo, ejecutar, exito }) => {
   };
 };
 
-/* i = cuenta concreta (cuando el cliente tiene fechas distintas por cuenta); sin i se paga la que vence primero. */
+/* Pago de un cliente: uno o varios meses y, si tiene fechas por cuenta, una o varias cuentas; una sola foto para todo. */
 B.pagarCliente = (c, i = null) => {
   const porCuenta = B.porCuenta(c);
   if (porCuenta && (i === null || isNaN(i))) i = B.iUrgente(c);
-  const periodo = B.deIso(porCuenta ? B.cFecha(c, i) : c.ProximoPago), nuevo = B.addMeses(periodo, 1);
+  const filas = porCuenta ? Array.from({ length: c.Cuentas }, (_, k) => k) : [null];
+  const st = filas.map(k => ({ i: k, on: porCuenta ? k === i : true, meses: 1 }));
+  const fechaDe = k => B.deIso(k === null ? c.ProximoPago : B.cFecha(c, k));
+  const mesTxt = d => `${B.MESES[d.getMonth()]} ${d.getFullYear()}`;
+  const activos = () => st.filter(x => x.on);
+  const html = `<div class="pago-sel" id="ps">${st.map((x, n) => {
+    const f = fechaDe(x.i);
+    return `<div class="ps-fila" data-n="${n}">
+      ${porCuenta ? `<label class="ps-chk"><input type="checkbox" ${x.on ? 'checked' : ''} data-ps="on"><span><b>${e(B.nombreCuenta(c, x.i))}</b><small>vence ${e(B.fechaCorta(B.aIso(f)))}</small></span></label>`
+        : `<div class="ps-chk"><span><b>${e(c.Cuentas > 1 ? B.cuentasTexto(c) : 'Pago mensual')}</b><small>vence ${e(B.fechaCorta(B.aIso(f)))}</small></span></div>`}
+      <div class="ps-mes"><button type="button" class="ps-b" data-ps="-" aria-label="Menos meses">−</button><b data-ps="n">1</b><small>mes</small><button type="button" class="ps-b" data-ps="+" aria-label="Más meses">+</button></div>
+    </div>`;
+  }).join('')}</div><div class="ps-res" id="ps-res"></div>`;
+  const periodoMin = () => {
+    const ds = activos().map(x => fechaDe(x.i)).sort((a, b) => a - b);
+    return ds[0] || fechaDe(filas[0]);
+  };
   B.hojaPago({
     titulo: 'Registrar pago',
-    intro: porCuenta
-      ? `¿Registrar el pago de <b>${e(c.Nombre)}</b> · ${e(B.nombreCuenta(c, i))} por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>?<br>La fecha de esa cuenta pasará del ${e(B.fechaCorta(B.aIso(periodo)))} al ${e(B.fechaCorta(B.aIso(nuevo)))}.`
-      : `¿Registrar el pago de <b>${e(c.Nombre)}</b> por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>?<br>Su próximo pago pasará al ${e(B.fechaCorta(B.aIso(nuevo)))}.`,
-    periodo, ejecutar: f => B.registrarPagoCliente(c, f, porCuenta ? i : null),
-    exito: { titulo: 'Pago registrado', texto: porCuenta ? `${c.Nombre} · ${B.nombreCuenta(c, i)}` : c.Nombre },
+    intro: `Pago de <b>${e(c.Nombre)}</b>${porCuenta ? '' : ` por <b>${e(B.dinero(c.Monto, c.Moneda))}</b>`}. ${porCuenta ? `Cada cuenta paga <b>${e(B.dinero(c.Monto, c.Moneda))}</b> por mes.` : ''} Elige cuántos meses${porCuenta ? ' y cuáles cuentas' : ''}; la foto sirve para todo.`,
+    periodo: periodoMin,
+    extra: {
+      html,
+      valido: () => activos().length > 0,
+      montar: (h, cambio) => {
+        const pinta = () => {
+          st.forEach((x, n) => {
+            const fila = h.$(`.ps-fila[data-n="${n}"]`);
+            fila.classList.toggle('off', !x.on);
+            fila.querySelector('[data-ps="n"]').textContent = x.meses;
+            fila.querySelector('[data-ps="-"]').disabled = !x.on || x.meses <= 1;
+            fila.querySelector('[data-ps="+"]').disabled = !x.on || x.meses >= 12;
+            fila.querySelector('.ps-mes small').textContent = x.meses === 1 ? 'mes' : 'meses';
+          });
+          const act = activos(), total = act.reduce((s, x) => s + x.meses, 0);
+          const lineas = act.map(x => {
+            const d = fechaDe(x.i), n = B.addMeses(d, x.meses);
+            return `<li>${porCuenta ? `<b>${e(B.nombreCuenta(c, x.i))}</b>: ` : ''}${x.meses === 1 ? e(mesTxt(d)) : `${e(mesTxt(d))} a ${e(mesTxt(B.addMeses(d, x.meses - 1)))}`} → próximo pago <b>${e(B.fechaCorta(B.aIso(n)))}</b></li>`;
+          }).join('');
+          h.$('#ps-res').innerHTML = act.length
+            ? `<div class="ps-total">Total: <b>${e(B.dinero(c.Monto * (porCuenta ? total : act[0].meses), c.Moneda))}</b> <small>(${porCuenta ? total : act[0].meses} ${total === 1 && !porCuenta || (!porCuenta && act[0].meses === 1) ? 'pago' : 'pagos'})</small></div><ul>${lineas}</ul>`
+            : '<div class="ps-total">Elige al menos una cuenta.</div>';
+          cambio();
+        };
+        h.$('#ps').addEventListener('click', ev => {
+          const b = ev.target.closest('button[data-ps]'); if (!b) return;
+          const x = st[+b.closest('.ps-fila').dataset.n];
+          x.meses = Math.min(12, Math.max(1, x.meses + (b.dataset.ps === '+' ? 1 : -1)));
+          pinta();
+        });
+        h.$('#ps').addEventListener('change', ev => {
+          const k = ev.target.closest('input[data-ps="on"]'); if (!k) return;
+          st[+k.closest('.ps-fila').dataset.n].on = k.checked; pinta();
+        });
+        pinta();
+      },
+    },
+    ejecutar: f => B.registrarPagosCliente(c, f, activos().map(x => ({ i: x.i, meses: x.meses }))),
+    exito: { get titulo() { return activos().reduce((s, x) => s + x.meses, 0) > 1 ? 'Pagos registrados' : 'Pago registrado'; }, get texto() { return c.Nombre; } },
   });
 };
 

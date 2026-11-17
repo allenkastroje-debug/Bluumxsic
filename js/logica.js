@@ -241,29 +241,38 @@ B.eliminarCliente = async c => {
   await B.guardar();
 };
 
-B.registrarPagoCliente = async (c, file, i = null) => {
-  const porCuenta = B.porCuenta(c) && i !== null && i >= 0 && i < c.Cuentas;
-  const periodo = B.deIso(porCuenta ? B.cFecha(c, i) : c.ProximoPago), nuevo = B.addMeses(periodo, 1);
+/* sel = [{ i, meses }]: i = cuenta (o null si el cliente paga todo junto), meses = cuántos meses paga.
+   Una sola foto sirve para todos los pagos; cada cuenta y cada mes queda como su propio movimiento. */
+B.registrarPagosCliente = async (c, file, sel) => {
+  const porCuenta = B.porCuenta(c);
+  const lista = sel.filter(x => x.meses >= 1).map(x => ({ i: porCuenta ? x.i : null, meses: Math.min(12, x.meses) }));
+  if (!lista.length) throw new Error('No hay nada que registrar.');
+  const inicio = x => B.deIso(x.i === null ? c.ProximoPago : B.cFecha(c, x.i));
+  const primero = lista.map(inicio).sort((a, b) => a - b)[0];
   if (!c.Carpeta) c.Carpeta = await B.crearCarpeta(c.Nombre, (c.Usuarios[0] || '').trim());
-  const reg = await B.guardarPrueba(file, c.Carpeta, c.Nombre, periodo, c.Id, null);
-  const us = B.usuariosTexto(c);
-  B.d.Movimientos.push({
-    Id: B.uuid(), Fecha: B.aIso(B.hoy()), Tipo: 'Ingreso',
-    Descripcion: porCuenta ? `Pago ${c.Nombre} (${B.nombreCuenta(c, i)}) · cuenta ${i + 1} de ${c.Cuentas}`
-      : `Pago ${c.Nombre}${us ? ` (${us})` : ''} · ${B.cuentasTexto(c)}`,
-    Monto: c.Monto, Moneda: c.Moneda, Tasa: B.d.Tasa, ClienteId: c.Id, CuentaIndice: porCuenta ? i : null, Prueba: reg.Archivo,
-  });
-  if (porCuenta) {
-    c.ProximosPagos[i] = B.aIso(nuevo); c.UltimosPagos[i] = B.aIso(B.hoy());
-    B.sincronizar(c);
-  } else {
-    c.UltimoPago = B.aIso(B.hoy());
-    c.ProximoPago = B.aIso(nuevo);
-    c.ProximosPagos = Array(c.Cuentas).fill(c.ProximoPago);
+  const reg = await B.guardarPrueba(file, c.Carpeta, c.Nombre, primero, c.Id, null);
+  const us = B.usuariosTexto(c), total = lista.reduce((s, x) => s + x.meses, 0);
+  for (const x of lista) {
+    const desde = inicio(x);
+    for (let k = 0; k < x.meses; k++) {
+      const mes = B.addMeses(desde, k);
+      const etiqueta = total > 1 ? ` · ${B.MESES[mes.getMonth()]} ${mes.getFullYear()}` : '';
+      B.d.Movimientos.push({
+        Id: B.uuid(), Fecha: B.aIso(B.hoy()), Tipo: 'Ingreso',
+        Descripcion: (porCuenta ? `Pago ${c.Nombre} (${B.nombreCuenta(c, x.i)}) · cuenta ${x.i + 1} de ${c.Cuentas}`
+          : `Pago ${c.Nombre}${us ? ` (${us})` : ''} · ${B.cuentasTexto(c)}`) + etiqueta,
+        Monto: c.Monto, Moneda: c.Moneda, Tasa: B.d.Tasa, ClienteId: c.Id, CuentaIndice: porCuenta ? x.i : null, Prueba: reg.Archivo,
+      });
+    }
+    const nuevo = B.addMeses(desde, x.meses);
+    if (porCuenta) { c.ProximosPagos[x.i] = B.aIso(nuevo); c.UltimosPagos[x.i] = B.aIso(B.hoy()); }
+    else { c.UltimoPago = B.aIso(B.hoy()); c.ProximoPago = B.aIso(nuevo); c.ProximosPagos = Array(c.Cuentas).fill(c.ProximoPago); }
   }
+  if (porCuenta) B.sincronizar(c);
   await B.guardar();
   return reg;
 };
+B.registrarPagoCliente = (c, file, i = null) => B.registrarPagosCliente(c, file, [{ i, meses: 1 }]);
 
 /* ───────────── Planes familiares ───────────── */
 B.validarPlan = f => {
@@ -549,7 +558,7 @@ B.restaurar = async r => {
 B.eliminarPrueba = async ruta => {
   const usos = B.d.Movimientos.filter(m => m.Prueba === ruta).length;
   if (!await B.confirmar('Eliminar comprobante',
-    `¿Eliminar la foto «${B.nombreArchivo(ruta)}»?\n\n${usos ? 'El movimiento que la usa se queda, solo sin foto.\n' : ''}Esto no se puede deshacer.`, { si: 'Eliminar', peligro: true })) return false;
+    `¿Eliminar la foto «${B.nombreArchivo(ruta)}»?\n\n${usos > 1 ? `Los ${usos} movimientos que la usan se quedan, solo sin foto.\n` : usos ? 'El movimiento que la usa se queda, solo sin foto.\n' : ''}Esto no se puede deshacer.`, { si: 'Eliminar', peligro: true })) return false;
   await B.db.del('pruebas', ruta);
   B.d.Pruebas = B.d.Pruebas.filter(r => r.Archivo !== ruta);
   for (const m of B.d.Movimientos) if (m.Prueba === ruta) m.Prueba = null;

@@ -398,3 +398,20 @@ textarea { resize:vertical; }
 .ic { display:inline-flex; vertical-align:-.22em; line-height:1; }
 .ico { width:1.2em; height:1.2em; flex:none; overflow:visible; }
 .btn .ic, .chipbtn .ic, .mov-btn .ic { margin-right:.1em; }
+
+/* ───── Pago de varios meses / cuentas ───── */
+.pago-sel { display:flex; flex-direction:column; gap:8px; margin:10px 0 6px; }
+.ps-fila { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid rgb(128 128 128 / .28); border-radius:14px; background:rgb(128 128 128 / .08); }
+.ps-fila.off { opacity:.55; }
+.ps-chk { display:flex; align-items:center; gap:10px; min-width:0; cursor:pointer; }
+.ps-chk input { width:20px; height:20px; flex:none; accent-color:var(--logo); }
+.ps-chk span { display:flex; flex-direction:column; min-width:0; }
+.ps-chk small, .ps-mes small { opacity:.7; font-size:.78rem; }
+.ps-chk b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ps-mes { display:flex; align-items:center; gap:8px; flex:none; }
+.ps-mes > b { min-width:1.4em; text-align:center; font-size:1.1rem; }
+.ps-b { width:34px; height:34px; border-radius:50%; border:1px solid rgb(128 128 128 / .35); background:transparent; color:inherit; font-size:1.2rem; line-height:1; cursor:pointer; }
+.ps-b:disabled { opacity:.35; }
+.ps-res { margin:4px 0 10px; font-size:.9rem; }
+.ps-total { font-size:1rem; margin-bottom:4px; }
+.ps-res ul { margin:4px 0 0; padding-left:18px; opacity:.85; }
